@@ -1,0 +1,15 @@
+
+# Grub themes
+=grub2-themes/steam-big-picture-0_p20131110 ~amd64
+
+# Editors
+=app-editors/sublime-text-2.0.2 ~amd64
+
+# Subversion
+>=dev-vcs/subversion-1.9.3
+
+# Other
+>=dev-perl/Term-Animation-2.6 ~amd64
+>=games-misc/asciiquarium-1.1 ~amd64
+>=x11-themes/numix-icon-theme-20151213 ~amd64
+>=x11-themes/numix-gtk-theme-2.5.1 ~amd64

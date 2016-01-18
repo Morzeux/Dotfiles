@@ -1,0 +1,5 @@
+#!/bin/bash
+source ~/storage_linux/venv/py35-crypto-currencies/bin/activate
+cd ~/workspace/projects/python/crypto-currencies/
+python source.py
+

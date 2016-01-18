@@ -1,0 +1,12 @@
+#!/bin/sh
+echo "Turning off elasticsearch..."
+systemctl stop elasticsearch.service
+echo "Turning off postgresql..."
+systemctl stop postgresql.service
+echo "Turning off redis..."
+systemctl stop redis.service
+echo "Turning off MariaDB..."
+systemctl stop mysqld.service
+echo "Turning off httpd..."
+systemctl stop httpd.service
+

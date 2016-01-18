@@ -1,0 +1,12 @@
+#!/bin/sh
+echo "Turning on elasticsearch..."
+systemctl start elasticsearch.service
+echo "Turning on postgresql..."
+systemctl start postgresql.service
+echo "Turning on redis..."
+systemctl start redis.service
+echo "Turning on MariaDB..."
+systemctl start mysqld.service
+echo "Turning on httpd..."
+systemctl  start httpd.service
+

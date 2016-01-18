@@ -1,0 +1,32 @@
+
+# Cinnamon + SLIM
+gnome-extra/cinnamon networkmanager nls python_targets_python3_4
+x11-misc/slim branding pam
+
+# Audio
+media-sound/pulseaudio alsa caps dbus gdbm glib orc sox -system-wide -libsamplerate -oss
+
+# Editors
+app-editors/vim nls python ruby tcl vim-pager gpm
+
+# Portage
+app-portage/layman git subversion
+
+# Splashscreen
+media-libs/freetype static-libs
+media-libs/libpng static-libs
+media-libs/lcms static-libs
+media-libs/libjpeg static-libs
+media-libs/libjpeg-turbo static-libs
+media-libs/libmng static-libs
+virtual/jpeg static-libs
+sys-libs/zlib static-libs
+sys-libs/gpm static-libs
+app-arch/bzip2 static-libs
+media-gfx/splashutils -hardened png truetype fbcondecor
+
+# Other
+net-misc/iputils -caps -filecaps
+www-client/firefox -bindist hardened gstreamer jit minimal pulseaudio
+sys-fs/ntfs3g -debug -static-libs xattr acl external-fuse nfsprogs
+
