@@ -121,7 +121,7 @@ $ echo HOSTNAME > /etc/hostname
 
 And install network:
 ```
-$ pacman -Syu networkmanager dhcpcd dialog
+$ pacman -Syu networkmanager net-tools dhcpcd dialog
 ```
 
 Finally install bootloader:
@@ -222,9 +222,14 @@ Codecs:
 $ pacman -S a52dec faac faad2 flac jasper lame libdca libdv libmad libmpeg2 libtheora libvorbis libxv wavpack x264 xvidcore gstreamer0.10-plugins
 ```
 
+Themes:
+```
+$ pacman -S faenza-icon-theme numix-themes
+```
+
 Apps:
 ```
-$ pacman -S firefox flashplugin vlc chromium unzip unrar p7zip pidgin skype deluge smplayer audacious qmmp gimp xfburn thunderbird gedit gnome-system-monitor libreoffice
+$ pacman -S firefox flashplugin vlc chromium unzip unrar p7zip pidgin skype deluge smplayer audacious qmmp gimp xfburn thunderbird gedit gnome-system-monitor libreoffice libgtop
 ```
 
 ### Other usefull stuff
