@@ -17,6 +17,7 @@ elif LINUX_DISTRIBUTION.startswith('gentoo'):
 DEPENDENCIES = [
     'pygmentize',
     'cowsay',
+    'fortune'
     'toilet',
     'asciiquarium',
     'cinnamon-session'
