@@ -3,6 +3,8 @@ My personal dotfiles and configurations for my installed Arch and Gentoo distrib
 
 Gentoo config is for my Virtualboxed Gentoo which is hosted in my Lenovo E540 Laptop.
 
+![alt text](https://github.com/Morzeux/Dotfiles/blob/master/preview.png "Gentoo Preview")
+
 ## Install
 
 To install:
