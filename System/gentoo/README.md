@@ -216,4 +216,210 @@ And finally we are going to configure kernel. Don't forget to store your configu
 $ genkernel --menuconfig all
 ```
 
+```
+Gentoo Linux --->
+  Support for init systems, system and service managers --->
+    [*] systemd
+
+General setup  --->
+  (-morzeux) Local version - append to kernel release
+  -*- open by fhandle syscalls
+  -*- Control Group support
+  [*] Namespaces support  --->
+    -*- Network namespace
+  [ ] Enable deprecated sysfs features to support old userspace tools
+  [*] Configure standard kernel features (expert users)  --->
+    -*- Enable eventpoll support
+    -*- Enable signalfd() system call
+    -*- Enable timerfd() system call
+
+-*- Enable the block layer  --->
+  [*] Block layer SG support v4
+  Partition Types --->
+    [*] Advanced partition selection
+      [*] EFI GUID Partition support
+
+Processor type and features  --->
+  [*] Symmetric multi-processing support
+  [*] Enable seccomp to safely compute untrusted bytecode
+
+Executable file formats / Emulations  --->
+   [*] IA32 Emulation
+
+-*- Networking support --->
+  Networking options --->
+    <*> The IPv6 protocol
+
+Device drivers -->
+  Generic Driver Options  --->
+    ()  path to uevent helper
+    -*- Maintain a devtmpfs filesystem to mount at /dev
+    [ ]   Automount devtmpfs at /dev, after the kernel mounted the rootfs
+    [ ] Fallback user-helper invocation for firmware loading
+  Input Device Support --->
+    <*> Event Interface
+  Character devices --->
+    [*] Support multiple instances of devpts
+  Graphics support -->
+    [*] Laptop Hybrid Graphics - GPU switching support
+    Direct Rendering Manager -->
+      <*> Direct Rendering Manager(XFree86 and higher DRI support) --->
+        <M> Intel 8xx/9xx/G3x/G4x/HD Graphics
+          [*] Enable modesetting on intel by default
+    <*> Support for frame buffer devices --->
+      -*-   Enable Video Mode Handling Helpers
+      [ ]   Enable Tile Blitting Support
+    Console display driver support --->
+      [*] VGA text console
+      [*]   Enable Scrollback Buffer in System RAM
+      (64)    Scrollback Buffer Size (in KB)
+      <*> Framebuffer Console support
+      [*]   Map the console to the primary display device
+      [ ]   Framebuffer Console Rotation
+      [*]   Support for the Framebuffer Console Decorations
+      [ ] Select compiled-in fonts
+    [*] Bootup logo
+      [x] Standard 224-color Linux logo
+
+Firmware Drivers  --->
+  [*] Export DMI identification via sysfs to userspace
+
+File systems --->
+  <*> Second extended fs support
+  <*> Ext3 journalling file system support
+  <*> The Extended 4 (ext4) filesystem
+  <*> Reiserfs support
+  <*> JFS filesystem support
+  <*> XFS filesystem support
+  -*- Inotify support for userspace
+  -*- Kernel automounter version 4 support (also supports v3)
+  ...
+  Pseudo Filesystems --->
+    -*- /proc file system support
+    -*- sysfs file system support
+    -*- Tmpfs virtual memory file system support (former shm fs)
+    [*]   Tmpfs POSIX Access Control Lists
+    -*-   Tmpfs extended attributes
+```
+
+Save, exit and wait for compilation to be finished. After compiling built external modules:
+```
+$ cd /usr/src/linux
+$ make modules_prepare
+$ emerge -a @module-rebuild
+```
+
+Now write:
+```
+$ ln -sf /proc/self/mounts /etc/mtab
+```
+
+And download firmware and network support:
+```
+$ emerge -a sys-kernel/linux-firmware
+$ emerge -a net-misc/networkmanager enet-misc/dhcpcd
+```
+
+#### Bootloader setup
+
+Finally we are going to configure grub bootloader and reboot to newly installed system. So firstly install grub bootloader. If you are using EFI, then add *GRUB_PLATFORMS="efi-64"* to make.conf:
+
+```
+$ emerge -a sys-boot/grub
+```
+
+And install grub:
+```
+$ grub2-install /dev/sda
+```
+
+If you are using EFI:
+```
+$ grub2-install --target=x86_64-efi --efi-directory=/boot
+```
+
+Using nano uncomment line *GRUB_CMDLINE_LINUX="init=/usr/lib/systemd/systemd*:
+```
+$ nano -w /etc/default/grub
+```
+
+And update configuration:
+```
+$ grub2-mkconfig -o /boot/grub/grub.cfg
+```
+
+Now you should have installed base system. Rest is up to unchroot and reboot:
+```
+$ exit
+(livecd) $ umount -l /mnt/gentoo/dev{/shm,/pts,}
+(livecd) % umount /mnt/gentoo{/boot,/sys,/proc,}
+```
+
+Take a deep breath and reboot:
+```
+(livecd) % reboot
+```
+
+### Post-installation configurations
+
+If all went well, then you should boot into freshly installed Gentoo system. Now we are going to install some services and cleanup unnecessary install files.
+
+Firstly setup hostname and locales:
+
+```
+$ hostnamectl set-hostname HOSTNAME
+$ localectl set-locale LANG="en_US.utf8"
+$ timedatectl set-timezone Europe/Bratislava
+```
+
+Then enable network services:
+```
+$ systemctl enable NetworkManager.service
+$ systemctl start NetworkManager.service
+$ systemctl enable dhcpcd.service
+$ systemctl start dhcpcd.service
+$ ping google.com
+```
+
+And finally install some useful services:
+```
+$ emerge -a net-misc/ntp
+$ emerge -a app-admin/syslog-ng
+$ emerge -a sys-process/cronie
+$ emerge -a sys-apps/mlocate
+$ emerge -a sys-fs/dosfstools
+$ emerge -a sys-apps/pciutils
+$ systemctl enable ntpd.service
+$ systemctl enable syslog-ng.service
+$ systemctl enable cronie.service
+$ systemctl enable sshd.service
+```
+
+Now configure *vim* as default editor instead of nano:
+```
+$ emerge -a app-editors/vim
+$ eselect editor list
+$ eselect editor set N
+```
+
+Add some regular user and allow him to sudo:
+```
+$ emerge -a sys-admin/sudo
+$ useradd -m -G users,wheel,audio,video,cdrom,usb -s /bin/bash USERNAME
+$ passwd USERNAME
+$ vim /etc/sudoers
+```
+
+Then uncomment line *%wheel ALL=(ALL) ALL* and save.
+
+Finally cleanup unnecessary stage3 install file and reboot:
+```
+$ rm /stage3-amd64-*
+$ reboot
+```
+
+You should now to have installed and configured basic system.
+
+## Gentoo Tweaking
+
 **To be continued...**
