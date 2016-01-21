@@ -37,11 +37,11 @@ Pick one (mine is /dev/sda)
 
 My setup will be 2MB for *GRUB* partition, 512MB *BOOT* partition, 2GB *SWAP* partition and rest *ROOT* partition.
 ```
-(parted) $ mklabel gtp
+(parted) $ mklabel gpt
 (parted) $ unit mib
 (parted) $ mkpart primary 1 3
 (parted) $ name 1 grub
-(parted) $ set 1 bios_grup on
+(parted) $ set 1 bios_grub on
 (parted) $ 
 (parted) $ mkpart primary 3 515
 (parted) $ name 2 boot
