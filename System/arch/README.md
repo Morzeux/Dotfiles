@@ -15,7 +15,7 @@ This covers base partitioning.
 Wireless:
 ```
 (livecd) $ ifconfig
-(livecd) $ wifi-menu -o INT
+(livecd) $ wifi-menu -o INTERFACE
 ```
 
 And check:
@@ -121,7 +121,7 @@ $ echo HOSTNAME > /etc/hostname
 
 And install network:
 ```
-$ pacman -Syu networkmanager dhcpcd dialog
+$ pacman -Syu networkmanager net-tools dhcpcd dialog
 ```
 
 Finally install bootloader:
@@ -161,3 +161,109 @@ Finally update all packages:
 $ pacman -Syu
 ```
 
+## Arch Tweaks
+
+You should now have installed fresh system. Next step is to change console system into nice GUI system.
+
+### Sound
+
+To configure sound first install alsa-utils:
+
+```
+$ pacman -Syu alsa-utils
+```
+
+And then configure them as user:
+```
+(user) $ alsamixer
+(user) $ speaker-test -c 2
+```
+
+Finally install *pulseaudio* with *pavucontrol*:
+```
+$ pacman -Syu pulseaudio pavucontrol
+```
+
+Choose your driver and install.
+
+### Cinnamon with Desktop Manager
+
+To install Cinnamon you will have to start with Xorg server first and then evaluate.
+
+```
+$ pacman -S xorg xorg-xinit xterm
+$ startx
+```
+
+Now as user install Cinnamon and configure *.xinitrc*:
+```
+(user) $ pacman -S cinnamon gnome-terminal
+(user) $ echo "exec cinnamon-session" > .xinitrc
+(user) startx
+```
+
+Now install desktop manager and reboot:
+```
+$ pacman -S slim archlinux-themes-slim
+$ systemctl enable slim.service
+$ nano -w /etc/slim.conf
+$ reboot
+```
+
+Install now some useful stuff.
+
+Fonts:
+```
+$ pacman -Syu ttf-dejavu ttf-droid ttf-liberation ttf-ubuntu-font-family cairo # fonts
+```
+
+Codecs:
+```
+$ pacman -S a52dec faac faad2 flac jasper lame libdca libdv libmad libmpeg2 libtheora libvorbis libxv wavpack x264 xvidcore gstreamer0.10-plugins
+```
+
+Themes:
+```
+$ pacman -S faenza-icon-theme numix-themes
+```
+
+Apps:
+```
+$ pacman -S firefox flashplugin vlc chromium unzip unrar p7zip pidgin skype deluge smplayer audacious qmmp gimp xfburn thunderbird gedit gnome-system-monitor libreoffice libgtop
+```
+
+### Other usefull stuff
+
+```
+$ pacman -Syu vim wget subversion git meld tor ufw gufw
+```
+
+Enabling firewall:
+```
+$ ufw enable
+```
+
+Installing yaourt:
+```
+$ pacman -S yajl
+$ wget https://aur.archlinux.org/cgit/aur.git/snapshot/package-query.tar.gz
+$ tar -xvf package-query.tar.gz
+$ cd package-query
+$ makepkg
+$ pacman -U package-query-1.7-1-x86_64.pkg.tar.xz
+$ cd ..
+$ wget https://aur.archlinux.org/cgit/aur.git/snapshot/yaourt.tar.gz
+$ tar -xvf yaourt.tar.gz
+$ cd yaourt
+$ makepkg
+$ pacman -U yaourt-1.7-1-any.pkg.tar.xz
+$ pacman -S rsync
+$ cd ..
+$ rm -r package-query*
+$ rm -r yaourt*
+```
+
+Sublime:
+```
+$ yaourt -Syuab sublime-text
+```
