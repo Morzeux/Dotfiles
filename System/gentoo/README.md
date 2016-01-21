@@ -352,12 +352,12 @@ Now you should have installed base system. Rest is up to unchroot and reboot:
 ```
 $ exit
 (livecd) $ umount -l /mnt/gentoo/dev{/shm,/pts,}
-(livecd) % umount /mnt/gentoo{/boot,/sys,/proc,}
+(livecd) $ umount /mnt/gentoo{/boot,/sys,/proc,}
 ```
 
 Take a deep breath and reboot:
 ```
-(livecd) % reboot
+(livecd) $ reboot
 ```
 
 ### Post-installation configurations
@@ -422,4 +422,180 @@ You should now to have installed and configured basic system.
 
 ## Gentoo Tweaking
 
-**To be continued...**
+At this part we are going to install and configure some Gentoo tweak as sound, gui, splashscreen, themes and my dotfiles.
+
+### Sound
+
+I advice to look at [PulseAudio](https://wiki.gentoo.org/wiki/ALSA and https://wiki.gentoo.org/wiki/PulseAudio) page first and configure your kernel according to your needs.
+
+Firstly login as user and install alsa-utils:
+```
+(user) $ sudo emerge -a alsa-utils
+```
+
+Then unmute and configure volume and finally test it:
+```
+(user) $ alsamixer
+(user) $ speaker-test -t wav -c 2
+```
+
+Finally install pulseautio with pavucontrol:
+```
+(user) $ sudo emerge -a media-plugins/alsa-plugins media-sound/pulseaudio media-sound/pavucontrol
+```
+
+### Xorg Server
+
+First I advice to read [Xorg](https://wiki.gentoo.org/wiki/Xorg/Guide) and [Xorg Server](https://wiki.gentoo.org/wiki/X_server) guides. After check that display drivers are correctly set continue:
+
+```
+$ emerge -a x11-base/xorg-drivers x11-base/xorg-server xterm twm
+$ env-update
+$ source /etc/profile
+$ startx
+```
+
+You should now see basic Xorg gui interface.
+
+#### Cinnamon and Desktop Manager
+
+To install Cinnamon firstly emerge gtk-extra:
+
+```
+$ emerge -a x11-libs/gtk+extra
+```
+
+Then proceed with Cinnamon, don't forget to grab a large cup of coffee:
+```
+$ emerge -a gnome-extra/cinnamon x11-terms/gnome-terminal
+$ emerge -a media-libs/gst-plugins-good media-plugins/gst-plugins-vpx
+```
+
+As user setup your cinnamon session and start:
+```
+(user) $ echo "exec cinnamon-session" > .xinitrc
+(user) $ startx
+```
+
+You should see basic Cinnamon GUI, now it is time to configure desktop manager. I'm using Slim.
+```
+$ emerge -a x11-misc/slim
+$ systemctl enable slim.service
+```
+
+Finally edit */etc/slim.conf* and:
+```
+comment out *# login_cmd exec /bin/bash -login /usr/share/slim/Xsession %session*
+uncommnet *login_cmd exec /bin/bash -login ~/.xinitrc %session*
+set *defaultuser USERNAME*
+```
+
+And finally reboot:
+```
+$ reboot
+```
+
+You should now boot to Cinnamon desktop. You can now install some useful apps:
+
+```
+$ emerge -a gnome-extra/gnome-calculator media-gfx/gnome-screenshot media-gfx/eog app-text/evince
+$ emerge -a gnome-extra/gnome-system-monitor app-arch/file-roller app-cdr/brasero app-editors/gedit
+$ emerge -a www-client/firefox
+```
+
+#### Beauty fonts
+
+I took an inspiration from this [guide](http://kev009.com/wp/2009/12/getting-beautiful-fonts-in-gentoo-linux/). So firstly install som cool fonts:
+
+```
+$ emerge -a app-eselect/eselect-fontconfig media-fonts/corefonts media-fonts/dejavu media-fonts/font-bh-ttf media-fonts/font-bh-type1 media-fonts/freefonts media-fonts/ttf-bitstream-vera media-fonts/unifont media-fonts/artwiz-aleczapka-en media-fonts/ubuntu-font-family
+```
+
+And then turn on these fonts:
+```
+10-autohint.conf
+10-sub-pixel-rgb.conf
+20-unhint-small-dejavu-sans-mono.conf
+20-unhint-small-dejavu-sans.conf
+20-unhint-small-dejavu-serif.conf
+25-unhint-nonlatin.conf
+57-dejavu-sans-mono.conf
+57-dejavu-sans.conf
+57-dejavu-serif.conf
+```
+
+Using commands:
+```
+$ eselect fontconfig list
+$ eselect fontconfig set N
+```
+
+#### Portage tools and Layman
+
+There are several useful portage tools:
+
+```
+$ emerge -a app-portage/gentoolkit app-portage/cfg-update app-portage/eix dev-util/meld
+$ emerge -a app-portage/layman
+```
+
+And configure Layman:
+```
+$ layman -L
+$ echo "source /var/lib/layman/make.conf" >> /etc/portage/make.conf
+$ eix-update
+```
+
+#### Splashscreen
+
+In this part we will install some Gentoo splashscreen with framebuffer.
+
+```
+$ emerge -a splashutils media-gfx/splash-themes-gentoo
+```
+
+Now edit grub config */etc/default/grub* and set this line:
+```
+RUB_CMDLINE_LINUX_DEFAULT="linux video=uvesafb:1024x768-32,mtrr:3,ywrap 
+```
+
+Also edit */etc/genkernel.conf* and set these lines:
+```
+SPLASH="yes"
+SPLASH_THEME="natural_gentoo"
+```
+
+Finally update grub config and rebuild kernel:
+```
+$ grub2-mkconfig -o /boot/grub/grub.cfg
+$ cd /usr/src/linux
+$ genkernel --no-clean all
+$ make modules_prepare
+$ emerge -a @module-rebuild
+```
+
+Finally reboot with new splash screen:
+```
+$ reboot
+```
+
+#### Grub theming
+
+In this part we will add cutom grub theme. Firstly add new layer to layman and install new theme:
+```
+$ layman -a grub2-themes
+$ emerge -a grub2-themes/steam-big-picture
+$ cp -r /usr/share/grub/themes/steam-big-picture /boot/grub/themes/steam-big-picture
+```
+
+Now edit */etc/default/vim* and set these lines:
+```
+GRUB_GFXMODE=1024x768
+GRUB_THEME="/boot/grub/themes/steam-big-picture/theme.txt"
+```
+
+Finally update grub and reboot:
+```
+$ grub2-mkconfig -o /boot/grub/grub.cfg
+$ reboot
+```
