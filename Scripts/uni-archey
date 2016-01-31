@@ -1,0 +1,419 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+#
+# Archey [version 0.4.0]
+#
+# Archey is a simple system information tool written in Python.
+#
+# Copyright 2010 Melik Manukyan <melik@archlinux.us>
+# Copyright 2010 David Vazgenovich Shakaryan <dvshakaryan@gmail.com>
+# Copyright 2015 Štefan "Morzeux" Šmihla <morzeux@gmail.com>
+#
+# ASCII art by Brett Bohnenkamper <kittykatt@silverirc.com>
+# Changes Jerome Launay <jerome@projet-libre.org>
+# Fedora support by YeOK <yeok@henpen.org>
+#
+# Distributed under the terms of the GNU General Public License v3.
+# See http://www.gnu.org/licenses/gpl.txt for the full license text.
+
+# Import libraries
+
+import os
+import sys
+import subprocess
+import re
+from subprocess import Popen, PIPE
+from getpass import getuser
+
+
+if sys.version_info >= (3, 0):
+    unicode = str
+
+# ---------------Output---------------#
+
+output = [
+    'User',
+    'Hostname',
+    'Distro',
+    'Kernel',
+    'Uptime',
+    'WindowManager',
+    'DesktopEnvironment',
+    'Shell',
+    'Terminal',
+    'Packages',
+    'CPU',
+    'RAM',
+    'Disk'
+]
+ 
+# ---------------Dictionaries---------------#
+
+colorDict = {
+    'Ubuntu': ['\x1b[0;31m', '\x1b[1;31m', '\x1b[0;33m'],
+    'Debian': ['\x1b[0;31m', '\x1b[1;31m'],
+    'Mint': ['\x1b[0;32m', '\x1b[1;37m'],
+    'Crunchbang': ['\x1b[1;37m'],
+    'Fedora': ['\x1b[0;34m', '\x1b[1;37m'],
+    'Sensors': ['\x1b[0;31m', '\x1b[0;32m', '\x1b[0;33m'],
+    'Clear': ['\x1b[0m']
+    }
+
+deDict = {
+    'cinnamon-sessio': 'Cinnamon',
+    'gnome-session': 'GNOME',
+    'mate-session': 'MATE',
+    'ksmserver': 'KDE',
+    'xfce4-session': 'Xfce',
+    'lxsession': 'LXDE'
+    }
+
+wmDict = {
+    'awesome': 'Awesome',
+    'beryl': 'Beryl',
+    'blackbox': 'Blackbox',
+    'bspwm': 'bspwm',
+    'compiz': 'Compiz',
+    'dwm': 'DWM',
+    'enlightenment': 'Enlightenment',
+    'herbstluftwm': 'herbstluftwm',
+    'fluxbox': 'Fluxbox',
+    'fvwm': 'FVWM',
+    'i3': 'i3',
+    'icewm': 'IceWM',
+    'kwin': 'KWin',
+    'metacity': 'Metacity',
+    'musca': 'Musca',
+    'nemo': 'Nemo',
+    'openbox': 'Openbox',
+    'pekwm': 'PekWM',
+    'ratpoison': 'ratpoison',
+    'scrotwm': 'ScrotWM',
+    'wmaker': 'Window Maker',
+    'wmfs': 'Wmfs',
+    'wmii': 'wmii',
+    'xfwm4': 'Xfwm',
+    'xmonad': 'xmonad'
+    }
+
+envDict = {
+    'LANG': 'en_US.UTF-8'
+}
+
+
+class DistroInfo(object):
+
+    def __init__(self, fullname, distro_check, package_list_cmd, colors, logo):
+        self.fullname = fullname
+        self.distro_check = distro_check
+        self.package_list_cmd = package_list_cmd
+        self.colors = colors
+        self.logo = logo
+
+
+DISTROS = {
+    'arch': DistroInfo(
+        fullname='Arch Linux',
+        distro_check='/etc/pacman.conf',
+        package_list_cmd='pacman -Q',
+        colors=['\x1b[0;34m', '\x1b[1;34m'],
+        logo="""{color[1]}
+{color[1]}               +                {results[0]}
+{color[1]}               #                {results[1]}
+{color[1]}              ###               {results[2]}
+{color[1]}             #####              {results[3]}
+{color[1]}             ######             {results[4]}
+{color[1]}            ; #####;            {results[5]}
+{color[1]}           +##.#####            {results[6]}
+{color[1]}          +##########           {results[7]}
+{color[1]}         ######{color[0]}#####{color[1]}##;         {results[8]}
+{color[1]}        ###{color[0]}############{color[1]}+        {results[9]}
+{color[1]}       #{color[0]}######   #######        {results[10]}
+{color[0]}     .######;     ;###;`\".      {results[11]}
+{color[0]}    .#######;     ;#####.       {results[12]}
+{color[0]}    #########.   .########`     {results[13]}
+{color[0]}   ######'           '######    {results[14]}
+{color[0]}  ;####                 ####;   {results[15]}
+{color[0]}  ##'                     '##   {results[16]}
+{color[0]} #'                         `#  {results[17]}
+\x1b[0m""".strip()
+    ),
+    'gentoo': DistroInfo(
+        fullname='Gentoo Linux',
+        distro_check='/etc/portage/make.conf',
+        package_list_cmd='ls -d /var/db/pkg/*/*| cut -f5- -d/',
+        colors=['\x1b[0;34m', '\x1b[1;34m'],
+        logo="""{color[1]}
+{color[0]}        #@@@@@#                 {results[0]}
+{color[1]}       #@@{color[0]}@@@@@@#               {results[1]}
+{color[1]}      #@@@@{color[0]}@@@@@@@#             {results[2]}
+{color[1]}     #@@@@@@{color[0]}@@@@@@@@#           {results[3]}
+{color[1]}    #@@@@@@@@{color[0]}@@@@@@@@@#         {results[4]}
+{color[1]}   #@@@@@@@@@{color[0]} @@@@@@@@@#        {results[5]}
+{color[1]}    #@@@@@@@  {color[0]} @@@@@@@@@#       {results[6]}
+{color[1]}      #@@@@@@@@{color[0]}@@@@@@@@@#       {results[7]}
+{color[1]}        #@@@@@@@{color[0]}@@@@@@@@@#      {results[8]}
+{color[1]}         #@@@@@{color[0]}@@@@@@@@@@#      {results[9]}
+{color[1]}        #@@@@@{color[0]}@@@@@@@@@@#       {results[10]}
+{color[1]}      #@@@@@@{color[0]}@@@@@@@@@@#        {results[11]}
+{color[1]}     #@@@@@{color[0]}@@@@@@@@@@@#         {results[12]}
+{color[1]}    #@@@@@{color[0]}@@@@@@@@@@#           {results[13]}
+{color[1]}   #@@@@{color[0]}@@@@@@@@@@@#            {results[14]}
+{color[1]}    #@@{color[0]}@@@@@@@@@@#              {results[15]}
+{color[0]}     #@@@@@@@@@#                {results[16]}
+{color[0]}       #@@@@@#                  {results[17]}
+\x1b[0m""".strip()
+    )
+}
+
+processes = unicode(subprocess.check_output(
+    ('ps', '-u', getuser(), '-o', 'comm', '--no-headers')
+), encoding='utf8').rstrip('\n').split('\n')
+
+# ---------------Classes---------------#
+
+
+class Distro(object):
+
+    __instance__ = None
+
+    def __init__(self):
+        self.key = 'Distro'
+
+        for k, v in DISTROS.items():
+            if os.path.exists(v.distro_check):
+                self.distro = k
+                break
+        else:
+            sys.stderr('Unsupported Linux distro!')
+            sys.exit(1)
+
+    @classmethod
+    def get(cls):
+        if cls.__instance__ is None:
+            cls.__instance__ = cls()
+        return cls.__instance__
+
+    @property
+    def value(self):
+        return DISTROS[self.distro].fullname
+
+    @property
+    def package_list_cmd(self):
+        return DISTROS[self.distro].package_list_cmd
+
+    @property
+    def colors(self):
+        return DISTROS[self.distro].colors
+
+    @property
+    def logo(self):
+        return DISTROS[self.distro].logo
+
+    @property
+    def lines_count(self):
+        return len(DISTROS[self.distro].logo.split('\n')) - 2
+
+
+class Output(object):
+    results = []
+    results.extend([''] * (Distro.get().lines_count - len(output)))
+
+    def __init__(self):
+        self.distro = Distro.get()
+
+    def append(self, display):
+        self.results.append('%s%s: %s%s' % (
+            self.distro.colors[1],
+            display.key,
+            colorDict['Clear'][0],
+            display.value
+        ))
+
+    def output(self):
+        print(self.distro.logo.format(color=self.distro.colors, results=self.results))
+
+
+class User(object):
+
+    def __init__(self):
+        self.key = 'User'
+        self.value = os.getenv('USER')
+
+
+class Hostname(object):
+
+    def __init__(self):
+        hostname = Popen(['uname', '-n'], stdout=PIPE, env=envDict).communicate()[0].decode('Utf-8').rstrip('\n')
+        self.key = 'Hostname'
+        self.value = hostname
+
+
+class Kernel(object):
+
+    def __init__(self):
+        kernel = Popen(['uname', '-r'], stdout=PIPE, env=envDict).communicate()[0].decode('Utf-8').rstrip('\n')
+        self.key = 'Kernel'
+        self.value = kernel
+
+
+class Uptime(object):
+
+    def __init__(self):
+        fuptime = int(open('/proc/uptime').read().split('.')[0])
+        day = int(fuptime / 86400)
+        fuptime %= 86400
+        hour = int(fuptime / 3600)
+        fuptime %= 3600
+        minute = int(fuptime / 60)
+        uptime = ''
+        if day == 1:
+            uptime += '%d day, ' % day
+        if day > 1:
+            uptime += '%d days, ' % day
+        uptime += '%d:%02d' % (hour, minute)
+        self.key = 'Uptime'
+        self.value = uptime
+
+
+class WindowManager(object):
+
+    def __init__(self):
+        wm = ''
+        for key in wmDict.keys():
+            if key in processes:
+                wm = wmDict[key]
+                break
+
+        self.key = 'Window Manager'
+        self.value = wm
+
+
+class DesktopEnvironment(object):
+
+    def __init__(self):
+        de = ''
+        for key in deDict.keys():
+            if key in processes:
+                de = deDict[key]
+                break
+
+        self.key = 'Desktop Environment'
+        self.value = de
+
+
+class Shell(object):
+
+    def __init__(self):
+        self.key = 'Shell'
+        self.value = os.getenv('SHELL')
+
+
+class Terminal(object):
+
+    def __init__(self):
+        self.key = 'Terminal'
+        self.value = os.getenv('TERM')
+
+
+class Packages(object):
+
+    def __init__(self):
+        self.distro = Distro.get()
+
+        p1 = Popen(
+            self.distro.package_list_cmd,
+            stdout=PIPE,
+            env=envDict,
+            shell=True
+        ).communicate()[0].decode('utf-8')
+
+        packages = len(p1.rstrip('\n').split('\n'))
+        self.key = 'Packages'
+        self.value = packages
+
+
+class CPU(object):
+
+    def __init__(self):
+        file = open('/proc/cpuinfo').readlines()
+        cpuinfo = re.sub('  +', ' ', file[4].replace('model name\t: ', '').rstrip('\n'))
+        self.key = 'CPU'
+        self.value = cpuinfo
+
+
+class RAM(object):
+
+    def __init__(self):
+        raminfo = Popen(['free', '-m'], stdout=PIPE, env=envDict).communicate()[0].decode('Utf-8').split('\n')
+        ram = ''.join(filter(re.compile('M').search, raminfo)).split()
+        used = ram[2]
+        total = ram[1]
+        usedpercent = ((float(used) / float(total)) * 100)
+        if usedpercent <= 33:
+            ramdisplay = '%s%s MB %s/ %s MB' % (colorDict['Sensors'][1], used, colorDict['Clear'][0], total)
+
+        if 33 < usedpercent < 67:
+            ramdisplay = '%s%s MB %s/ %s MB' % (colorDict['Sensors'][2], used, colorDict['Clear'][0], total)
+
+        if usedpercent >= 67:
+            ramdisplay = '%s%s MB %s/ %s MB' % (colorDict['Sensors'][0], used, colorDict['Clear'][0], total)
+
+        self.key = 'RAM'
+        self.value = ramdisplay
+
+
+class Disk(object):
+
+    def __init__(self):
+        p1 = Popen([
+            'df', '-Tlh', '-B', 'GB', '--total',
+            '-t', 'ext4',
+            '-t', 'ext3',
+            '-t', 'ext2',
+            '-t', 'reiserfs',
+            '-t', 'jfs',
+            '-t', 'ntfs',
+            '-t', 'fat32',
+            '-t', 'btrfs',
+            '-t', 'fuseblk',
+            '-t', 'xfs'
+        ], stdout=PIPE, env=envDict).communicate()[0].decode("Utf-8")
+
+        total = p1.splitlines()[-1]
+        used = total.split()[3]
+        size = total.split()[2]
+        usedpercent = float(total.split()[5][:-1])
+        
+        if usedpercent <= 33:
+            disk = '%s%s %s/ %s' % (colorDict['Sensors'][1], used, colorDict['Clear'][0], size)  
+
+        if 33 < usedpercent < 67:
+            disk = '%s%s %s/ %s' % (colorDict['Sensors'][2], used, colorDict['Clear'][0], size)  
+
+        if usedpercent >= 67:
+            disk = '%s%s %s/ %s' % (colorDict['Sensors'][0], used, colorDict['Clear'][0], size)  
+
+        self.key = 'Disk'
+        self.value = disk
+
+classes = {
+    'User': User,
+    'Hostname': Hostname,
+    'Distro': Distro,
+    'Kernel': Kernel,
+    'Uptime': Uptime,
+    'WindowManager': WindowManager,
+    'DesktopEnvironment': DesktopEnvironment,
+    'Shell': Shell,
+    'Terminal': Terminal,
+    'Packages': Packages,
+    'CPU': CPU,
+    'RAM': RAM,
+    'Disk': Disk
+ }
+
+out = Output()
+for x in output:
+    out.append(classes[x]())
+out.output()

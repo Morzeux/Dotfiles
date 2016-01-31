@@ -15,3 +15,4 @@ alias su='toilet "With great power comes great responsibility!" -t  -f future; s
 alias aqua='asciiquarium'
 alias dconf-store='rm -f $DOTFILES_PATH/Configs/dconf_backup.dconf; dconf dump / > $DOTFILES_PATH/Configs/dconf_backup.dconf'
 alias dconf-loads='dconf load / < $DOTFILES_PATH/Configs/dconf_backup.dconf'
+alias archey='~/Scripts/uni-archey'
