@@ -185,7 +185,7 @@ class Distro(object):
                 self.distro = k
                 break
         else:
-            sys.stderr('Unsupported Linux distro!')
+            # sys.stderr('Unsupported Linux distro!')
             sys.exit(1)
 
     @classmethod
