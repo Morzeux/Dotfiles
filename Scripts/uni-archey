@@ -163,6 +163,30 @@ DISTROS = {
 {color[0]}     #@@@@@@@@@#                {results[16]}
 {color[0]}       #@@@@@#                  {results[17]}
 \x1b[0m""".strip()
+    ),
+    'other': DistroInfo(
+        fullname='Unknown Linux',
+        distro_check=None,
+        package_list_cmd=None,
+        colors=['\x1b[0;34m', '\x1b[1;33m'],
+        logo="""{color[1]}
+{color[1]}              a8888b.           {results[0]}
+{color[1]}             d888888b.          {results[1]}
+{color[1]}             8P"YP"Y88          {results[2]}
+{color[1]}             8|o||o|88          {results[3]}
+{color[1]}             8'    .88          {results[4]}
+{color[1]}             8`._.' Y8.         {results[5]}
+{color[1]}            d/      `8b.        {results[6]}
+{color[1]}          .dP   .     Y8b.      {results[7]}
+{color[1]}         d8:'   "   `::88b.     {results[8]}
+{color[1]}        d8"           `Y88b     {results[9]}
+{color[1]}       :8P     '       :888     {results[10]}
+{color[1]}        8a.    :      _a88P     {results[11]}
+{color[1]}      ._/"Yaa_ :    .| 88P|     {results[12]}
+{color[1]} jgs  \    YP"      `| 8P  `.   {results[13]}
+{color[1]} a:f  /     \._____.d|    .'    {results[14]}
+{color[1]}      `--..__)888888P`._.'      {results[15]}
+\x1b[0m""".strip()
     )
 }
 
@@ -181,12 +205,11 @@ class Distro(object):
         self.key = 'Distro'
 
         for k, v in DISTROS.items():
-            if os.path.exists(v.distro_check):
+            if v.distro_check is not None and os.path.exists(v.distro_check):
                 self.distro = k
                 break
         else:
-            sys.stderr('Unsupported Linux distro!')
-            sys.exit(1)
+            self.distro = 'other'
 
     @classmethod
     def get(cls):
@@ -321,14 +344,18 @@ class Packages(object):
     def __init__(self):
         self.distro = Distro.get()
 
-        p1 = Popen(
-            self.distro.package_list_cmd,
-            stdout=PIPE,
-            env=envDict,
-            shell=True
-        ).communicate()[0].decode('utf-8')
+        if self.distro.package_list_cmd is not None:
+            p1 = Popen(
+                self.distro.package_list_cmd,
+                stdout=PIPE,
+                env=envDict,
+                shell=True
+            ).communicate()[0].decode('utf-8')
 
-        packages = len(p1.rstrip('\n').split('\n'))
+            packages = len(p1.rstrip('\n').split('\n'))
+        else:
+            packages = 'Unknown'
+
         self.key = 'Packages'
         self.value = packages
 
