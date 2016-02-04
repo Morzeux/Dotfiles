@@ -10,12 +10,21 @@ then
   . $HOME/.dotfiles_conf
 fi
 
+# Shared aliases which are same for each distribution
 if [ -f $HOME/.bash_aliases ]
 then
   . $HOME/.bash_aliases
 fi
 
+# Aliases specific for distribution
 if [ -f $HOME/.bash_aliases_ext ]
 then
   . $HOME/.bash_aliases_ext
 fi
+
+# Aliases which are not synced
+if [ -f $HOME/.bash_aliases_local ]
+then
+  . $HOME/.bash_aliases_local
+fi
+
