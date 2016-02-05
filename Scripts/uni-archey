@@ -142,24 +142,24 @@ DISTROS = {
         package_list_cmd='ls -d /var/db/pkg/*/*| cut -f5- -d/',
         colors=['\x1b[1;37m', '\x1b[1;35m'],
         logo="""{color[1]}
-{color[1]}         -/oyddmdhs+:.            {results[0]}
-{color[1]}     -o{color[0]}dNMMMMMMMMNNmhy+{color[1]}-\`             {results[1]}
-{color[1]}   -y{color[0]}NMMMMMMMMMMMNNNmmdhy{color[1]}+-           {results[2]}
-{color[1]} \`o{color[0]}mMMMMMMMMMMMMNmdmmmmddhhy{color[1]}/\`        {results[3]}
-{color[1]} om{color[0]}MMMMMMMMMMMN{color[1]}oooooo{color[0]}hmdddhhhd{color[1]}o\`    {results[4]}
-{color[1]}.y{color[0]}dMMMMMMMMMMd{color[1]}ooommooo{color[0]}mdddhhhhdm{color[1]}+\`  {results[5]}
-{color[1]} oy{color[0]}hdmNMMMMMMMN{color[1]}ooooo{color[0]}dmddddhhhhyhN{color[1]}d.  {results[6]}
-{color[1]}  :o{color[0]}yhhdNNMMMMMMMNNNmmdddhhhhhyym{color[1]}Mh  {results[7]}
-{color[1]}    .:{color[0]}+sydNMMMMMNNNmmmdddhhhhhhmM{color[1]}my  {results[8]}
-{color[1]}       /m{color[0]}MMMMMMNNNmmmdddhhhhhmMNh{color[1]}s:  {results[9]}
-{color[1]}    \`o{color[0]}NMMMMMMMNNNmmmddddhhdmMNhs{color[1]}+\` {results[10]}
-{color[1]}  \`s{color[0]}NMMMMMMMMNNNmmmdddddmNMmhs{color[1]}/.    {results[11]}
-{color[1]} /N{color[0]}MMMMMMMMNNNNmmmdddmNMNdso{color[1]}:\`      {results[12]}
-{color[1]}+M{color[0]}MMMMMMNNNNNmmmmdmNMNdso{color[1]}/-          {results[13]}
-{color[1]}yM{color[0]}MNNNNNNNmmmmmNNMmhs+/{color[1]}-\`           {results[14]}
-{color[1]}/h{color[0]}MMNNNNNNNNMNdhs++/{color[1]}-\`              {results[15]}
-{color[1]}\`/{color[0]}ohdmmddhys+++/:{color[1]}.\`                {results[16]}
-{color[1]}  \`-//////:--.                      {results[17]})
+{color[1]}           -/oyddmdhs+:.              {results[0]}
+{color[1]}       -o{color[0]}dNMMMMMMMMNNmhy+{color[1]}-\`               {results[1]}
+{color[1]}     -y{color[0]}NMMMMMMMMMMMNNNmmdhy{color[1]}+-             {results[2]}
+{color[1]}   \`o{color[0]}mMMMMMMMMMMMMNmdmmmmddhhy{color[1]}/\`          {results[3]}
+{color[1]}   om{color[0]}MMMMMMMMMMMN{color[1]}oooooo{color[0]}hmdddhhhd{color[1]}o\`      {results[4]}
+{color[1]}  .y{color[0]}dMMMMMMMMMMd{color[1]}ooommooo{color[0]}mdddhhhhdm{color[1]}+\`    {results[5]}
+{color[1]}   oy{color[0]}hdmNMMMMMMMN{color[1]}ooooo{color[0]}dmddddhhhhyhN{color[1]}d.    {results[6]}
+{color[1]}    :o{color[0]}yhhdNNMMMMMMMNNNmmdddhhhhhyym{color[1]}Mh    {results[7]}
+{color[1]}      .:{color[0]}+sydNMMMMMNNNmmmdddhhhhhhmM{color[1]}my    {results[8]}
+{color[1]}         /m{color[0]}MMMMMMNNNmmmdddhhhhhmMNh{color[1]}s:    {results[9]}
+{color[1]}      \`o{color[0]}NMMMMMMMNNNmmmddddhhdmMNhs{color[1]}+\`   {results[10]}
+{color[1]}    \`s{color[0]}NMMMMMMMMNNNmmmdddddmNMmhs{color[1]}/.      {results[11]}
+{color[1]}   /N{color[0]}MMMMMMMMNNNNmmmdddmNMNdso{color[1]}:\`        {results[12]}
+{color[1]}  +M{color[0]}MMMMMMNNNNNmmmmdmNMNdso{color[1]}/-            {results[13]}
+{color[1]}  yM{color[0]}MNNNNNNNmmmmmNNMmhs+/{color[1]}-\`             {results[14]}
+{color[1]}  /h{color[0]}MMNNNNNNNNMNdhs++/{color[1]}-\`                {results[15]}
+{color[1]}  \`/{color[0]}ohdmmddhys+++/:{color[1]}.\`                  {results[16]}
+{color[1]}    \`-//////:--.                        {results[17]})
 \x1b[0m""".strip()
     ),
     'ubuntu': DistroInfo(
@@ -167,30 +167,30 @@ DISTROS = {
         package_list_cmd='dpkg -l',
         colors=['\x1b[1;37m', '\x1b[1;31m', '\x1b[1;33m'],
         logo="""{color[1]}
-{color[1]}                         ./+o+-               {results[0]}
-{color[0]}                 yyyyy- {color[1]}-yyyyyy+    {results[1]}
-{color[0]}              {color[0]}://+//////{color[1]}-yyyyyyo      {results[2]}
-{color[2]}          .++ {color[0]}.:/++++++/-{color[1]}.+sss/\`     {results[3]}
-{color[2]}        .:++o:  {color[0]}/++++++++/:--:/-          {results[4]}
-{color[2]}       o:+o+:++.{color[0]}\`..\`\`\`.-/oo+++++/   {results[5]}
-{color[2]}      .:+o:+o/.{color[0]}          \`+sssoo+/     {results[6]}
-{color[0]} .++/+:{color[2]}+oo+o:\`{color[0]}             /sssooo.    {results[7]}
-{color[0]}/+++//+:{color[2]}\`oo+o{color[0]}               /::--:.    {results[8]}
-{color[0]}\+/+o+++{color[2]}\`o++o{color[1]}               ++////.    {results[9]}
-{color[0]} .++.o+{color[2]}++oo+:\`{color[1]}             /dddhhh.    {results[10]}
-{color[2]}      .+.o+oo:.{color[1]}          \`oddhhhh+     {results[11]}
-{color[2]}       \+.++o+o\`{color[1]}\`-\`\`\`\`.:ohdhhhhh+ {results[12]}
-{color[2]}        \`:o+++ {color[1]}\`ohhhhhhhhyo++os:      {results[13]}
-{color[2]}          .o:{color[1]}\`.syhhhhhhh/{color[2]}.oo++o\`      {results[16]}
-{color[1]}              /osyyyyyyo{color[2]}++ooo+++/       {results[15]}
-{color[1]}                  \`\`\`\`\` {color[2]}+oo+++o\:  {results[16]}
-{color[2]}                         \`oo++.        {results[17]}
+{color[1]}                           ./+o+-                 {results[0]}
+{color[0]}                   yyyyy- {color[1]}-yyyyyy+      {results[1]}
+{color[0]}                {color[0]}://+//////{color[1]}-yyyyyyo        {results[2]}
+{color[2]}            .++ {color[0]}.:/++++++/-{color[1]}.+sss/\`       {results[3]}
+{color[2]}          .:++o:  {color[0]}/++++++++/:--:/-            {results[4]}
+{color[2]}         o:+o+:++.{color[0]}\`..\`\`\`.-/oo+++++/     {results[5]}
+{color[2]}        .:+o:+o/.{color[0]}          \`+sssoo+/       {results[6]}
+{color[0]}   .++/+:{color[2]}+oo+o:\`{color[0]}             /sssooo.      {results[7]}
+{color[0]}  /+++//+:{color[2]}\`oo+o{color[0]}               /::--:.      {results[8]}
+{color[0]}  \+/+o+++{color[2]}\`o++o{color[1]}               ++////.      {results[9]}
+{color[0]}   .++.o+{color[2]}++oo+:\`{color[1]}             /dddhhh.      {results[10]}
+{color[2]}        .+.o+oo:.{color[1]}          \`oddhhhh+       {results[11]}
+{color[2]}         \+.++o+o\`{color[1]}\`-\`\`\`\`.:ohdhhhhh+   {results[12]}
+{color[2]}          \`:o+++ {color[1]}\`ohhhhhhhhyo++os:        {results[13]}
+{color[2]}            .o:{color[1]}\`.syhhhhhhh/{color[2]}.oo++o\`        {results[16]}
+{color[1]}                /osyyyyyyo{color[2]}++ooo+++/         {results[15]}
+{color[1]}                    \`\`\`\`\` {color[2]}+oo+++o\:    {results[16]}
+{color[2]}                           \`oo++.          {results[17]}
 \x1b[0m"""
     ),
     'other': DistroInfo(
         fullname='Unknown Linux',
         package_list_cmd=None,
-        colors=['\x1b[1;30m', '\x1b[1;37m', '\x1b[1;33m'],
+        colors=['\x1b[1;37m', '\x1b[1;30m', '\x1b[1;33m'],
         logo="""{color[1]}                            {results[0]}
 {color[1]}         #####              {results[1]}
 {color[1]}        #######             {results[2]}
