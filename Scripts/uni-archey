@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-# Archey [version 0.4.0]
+# Archey [version 0.5.0]
 #
 # Archey is a simple system information tool written in Python.
 #
@@ -19,6 +19,7 @@
 # Import libraries
 
 import os
+import platform
 import sys
 import subprocess
 import re
@@ -103,9 +104,8 @@ envDict = {
 
 class DistroInfo(object):
 
-    def __init__(self, fullname, distro_check, package_list_cmd, colors, logo):
+    def __init__(self, fullname, package_list_cmd, colors, logo):
         self.fullname = fullname
-        self.distro_check = distro_check
         self.package_list_cmd = package_list_cmd
         self.colors = colors
         self.logo = logo
@@ -114,7 +114,6 @@ class DistroInfo(object):
 DISTROS = {
     'arch': DistroInfo(
         fullname='Arch Linux',
-        distro_check='/etc/pacman.conf',
         package_list_cmd='pacman -Q',
         colors=['\x1b[0;34m', '\x1b[1;34m'],
         logo="""{color[1]}
@@ -140,52 +139,71 @@ DISTROS = {
     ),
     'gentoo': DistroInfo(
         fullname='Gentoo Linux',
-        distro_check='/etc/portage/make.conf',
         package_list_cmd='ls -d /var/db/pkg/*/*| cut -f5- -d/',
-        colors=['\x1b[0;34m', '\x1b[1;34m'],
+        colors=['\x1b[1;37m', '\x1b[1;35m'],
         logo="""{color[1]}
-{color[0]}        #@@@@@#                 {results[0]}
-{color[1]}       #@@{color[0]}@@@@@@#               {results[1]}
-{color[1]}      #@@@@{color[0]}@@@@@@@#             {results[2]}
-{color[1]}     #@@@@@@{color[0]}@@@@@@@@#           {results[3]}
-{color[1]}    #@@@@@@@@{color[0]}@@@@@@@@@#         {results[4]}
-{color[1]}   #@@@@@@@@@{color[0]} @@@@@@@@@#        {results[5]}
-{color[1]}    #@@@@@@@  {color[0]} @@@@@@@@@#       {results[6]}
-{color[1]}      #@@@@@@@@{color[0]}@@@@@@@@@#       {results[7]}
-{color[1]}        #@@@@@@@{color[0]}@@@@@@@@@#      {results[8]}
-{color[1]}         #@@@@@{color[0]}@@@@@@@@@@#      {results[9]}
-{color[1]}        #@@@@@{color[0]}@@@@@@@@@@#       {results[10]}
-{color[1]}      #@@@@@@{color[0]}@@@@@@@@@@#        {results[11]}
-{color[1]}     #@@@@@{color[0]}@@@@@@@@@@@#         {results[12]}
-{color[1]}    #@@@@@{color[0]}@@@@@@@@@@#           {results[13]}
-{color[1]}   #@@@@{color[0]}@@@@@@@@@@@#            {results[14]}
-{color[1]}    #@@{color[0]}@@@@@@@@@@#              {results[15]}
-{color[0]}     #@@@@@@@@@#                {results[16]}
-{color[0]}       #@@@@@#                  {results[17]}
+{color[1]}         -/oyddmdhs+:.            {results[0]}
+{color[1]}     -o{color[0]}dNMMMMMMMMNNmhy+{color[1]}-\`             {results[1]}
+{color[1]}   -y{color[0]}NMMMMMMMMMMMNNNmmdhy{color[1]}+-           {results[2]}
+{color[1]} \`o{color[0]}mMMMMMMMMMMMMNmdmmmmddhhy{color[1]}/\`        {results[3]}
+{color[1]} om{color[0]}MMMMMMMMMMMN{color[1]}oooooo{color[0]}hmdddhhhd{color[1]}o\`    {results[4]}
+{color[1]}.y{color[0]}dMMMMMMMMMMd{color[1]}ooommooo{color[0]}mdddhhhhdm{color[1]}+\`  {results[5]}
+{color[1]} oy{color[0]}hdmNMMMMMMMN{color[1]}ooooo{color[0]}dmddddhhhhyhN{color[1]}d.  {results[6]}
+{color[1]}  :o{color[0]}yhhdNNMMMMMMMNNNmmdddhhhhhyym{color[1]}Mh  {results[7]}
+{color[1]}    .:{color[0]}+sydNMMMMMNNNmmmdddhhhhhhmM{color[1]}my  {results[8]}
+{color[1]}       /m{color[0]}MMMMMMNNNmmmdddhhhhhmMNh{color[1]}s:  {results[9]}
+{color[1]}    \`o{color[0]}NMMMMMMMNNNmmmddddhhdmMNhs{color[1]}+\` {results[10]}
+{color[1]}  \`s{color[0]}NMMMMMMMMNNNmmmdddddmNMmhs{color[1]}/.    {results[11]}
+{color[1]} /N{color[0]}MMMMMMMMNNNNmmmdddmNMNdso{color[1]}:\`      {results[12]}
+{color[1]}+M{color[0]}MMMMMMNNNNNmmmmdmNMNdso{color[1]}/-          {results[13]}
+{color[1]}yM{color[0]}MNNNNNNNmmmmmNNMmhs+/{color[1]}-\`           {results[14]}
+{color[1]}/h{color[0]}MMNNNNNNNNMNdhs++/{color[1]}-\`              {results[15]}
+{color[1]}\`/{color[0]}ohdmmddhys+++/:{color[1]}.\`                {results[16]}
+{color[1]}  \`-//////:--.                      {results[17]})
 \x1b[0m""".strip()
+    ),
+    'ubuntu': DistroInfo(
+        fullname='Ubuntu Linux',
+        package_list_cmd='dpkg -l',
+        colors=['\x1b[1;37m', '\x1b[1;31m', '\x1b[1;33m'],
+        logo="""{color[1]}
+{color[1]}                         ./+o+-               {results[0]}
+{color[0]}                 yyyyy- {color[1]}-yyyyyy+    {results[1]}
+{color[0]}              {color[0]}://+//////{color[1]}-yyyyyyo      {results[2]}
+{color[2]}          .++ {color[0]}.:/++++++/-{color[1]}.+sss/\`     {results[3]}
+{color[2]}        .:++o:  {color[0]}/++++++++/:--:/-          {results[4]}
+{color[2]}       o:+o+:++.{color[0]}\`..\`\`\`.-/oo+++++/   {results[5]}
+{color[2]}      .:+o:+o/.{color[0]}          \`+sssoo+/     {results[6]}
+{color[0]} .++/+:{color[2]}+oo+o:\`{color[0]}             /sssooo.    {results[7]}
+{color[0]}/+++//+:{color[2]}\`oo+o{color[0]}               /::--:.    {results[8]}
+{color[0]}\+/+o+++{color[2]}\`o++o{color[1]}               ++////.    {results[9]}
+{color[0]} .++.o+{color[2]}++oo+:\`{color[1]}             /dddhhh.    {results[10]}
+{color[2]}      .+.o+oo:.{color[1]}          \`oddhhhh+     {results[11]}
+{color[2]}       \+.++o+o\`{color[1]}\`-\`\`\`\`.:ohdhhhhh+ {results[12]}
+{color[2]}        \`:o+++ {color[1]}\`ohhhhhhhhyo++os:      {results[13]}
+{color[2]}          .o:{color[1]}\`.syhhhhhhh/{color[2]}.oo++o\`      {results[16]}
+{color[1]}              /osyyyyyyo{color[2]}++ooo+++/       {results[15]}
+{color[1]}                  \`\`\`\`\` {color[2]}+oo+++o\:  {results[16]}
+{color[2]}                         \`oo++.        {results[17]}
+\x1b[0m"""
     ),
     'other': DistroInfo(
         fullname='Unknown Linux',
-        distro_check=None,
         package_list_cmd=None,
-        colors=['\x1b[0;34m', '\x1b[1;33m'],
-        logo="""{color[1]}
-{color[1]}              a8888b.           {results[0]}
-{color[1]}             d888888b.          {results[1]}
-{color[1]}             8P"YP"Y88          {results[2]}
-{color[1]}             8|o||o|88          {results[3]}
-{color[1]}             8'    .88          {results[4]}
-{color[1]}             8`._.' Y8.         {results[5]}
-{color[1]}            d/      `8b.        {results[6]}
-{color[1]}          .dP   .     Y8b.      {results[7]}
-{color[1]}         d8:'   "   `::88b.     {results[8]}
-{color[1]}        d8"           `Y88b     {results[9]}
-{color[1]}       :8P     '       :888     {results[10]}
-{color[1]}        8a.    :      _a88P     {results[11]}
-{color[1]}      ._/"Yaa_ :    .| 88P|     {results[12]}
-{color[1]} jgs  \    YP"      `| 8P  `.   {results[13]}
-{color[1]} a:f  /     \._____.d|    .'    {results[14]}
-{color[1]}      `--..__)888888P`._.'      {results[15]}
+        colors=['\x1b[1;30m', '\x1b[1;37m', '\x1b[1;33m'],
+        logo="""{color[1]}                            {results[0]}
+{color[1]}         #####              {results[1]}
+{color[1]}        #######             {results[2]}
+{color[1]}        ##{color[0]}O{color[1]}#{color[0]}O{color[1]}##             {results[3]}
+{color[1]}        #{color[2]}#####{color[1]}#             {results[4]}
+{color[1]}      ##{color[0]}##{color[2]}###{color[0]}##{color[1]}##           {results[5]}
+{color[1]}     #{color[0]}##########{color[1]}##          {results[6]}
+{color[1]}    #{color[0]}############{color[1]}##         {results[7]}
+{color[1]}    #{color[0]}############{color[1]}###        {results[8]}
+{color[2]}   ##{color[1]}#{color[0]}###########{color[1]}##{color[2]}#        {results[9]}
+{color[2]} ######{color[1]}#{color[0]}#######{color[1]}#{color[2]}######      {results[10]}
+{color[2]} #######{color[1]}#{color[0]}#####{color[1]}#{color[2]}#######      {results[11]}
+{color[2]}   #####{color[1]}#######{color[2]}#####        {results[12]}
 \x1b[0m""".strip()
     )
 }
@@ -204,8 +222,9 @@ class Distro(object):
     def __init__(self):
         self.key = 'Distro'
 
+        distro = getattr(platform, 'linux_distribution')()[0].split(' ')[0].lower()
         for k, v in DISTROS.items():
-            if v.distro_check is not None and os.path.exists(v.distro_check):
+            if distro == k:
                 self.distro = k
                 break
         else:
@@ -247,7 +266,7 @@ class Output(object):
 
     def append(self, display):
         self.results.append('%s%s: %s%s' % (
-            self.distro.colors[1],
+            self.distro.colors[-1],
             display.key,
             colorDict['Clear'][0],
             display.value
