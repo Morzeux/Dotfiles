@@ -181,7 +181,7 @@ DISTROS = {
 {color[2]}        .+.o+oo:.{color[1]}          \`oddhhhh+       {results[11]}
 {color[2]}         \+.++o+o\`{color[1]}\`-\`\`\`\`.:ohdhhhhh+   {results[12]}
 {color[2]}          \`:o+++ {color[1]}\`ohhhhhhhhyo++os:        {results[13]}
-{color[2]}            .o:{color[1]}\`.syhhhhhhh/{color[2]}.oo++o\`        {results[16]}
+{color[2]}            .o:{color[1]}\`.syhhhhhhh/{color[2]}.oo++o\`        {results[14]}
 {color[1]}                /osyyyyyyo{color[2]}++ooo+++/         {results[15]}
 {color[1]}                    \`\`\`\`\` {color[2]}+oo+++o\:    {results[16]}
 {color[2]}                           \`oo++.          {results[17]}
