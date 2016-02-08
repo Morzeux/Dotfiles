@@ -27,6 +27,10 @@ from subprocess import Popen, PIPE
 from getpass import getuser
 
 
+ENCODING = sys.getdefaultencoding()
+LINESEP = os.linesep
+
+# Python 3 compatibility
 if sys.version_info >= (3, 0):
     unicode = str
 
@@ -60,59 +64,342 @@ colorDict = {
     'Clear': ['\x1b[0m']
     }
 
-deDict = {
-    'cinnamon-sessio': 'Cinnamon',
-    'gnome-session': 'GNOME',
-    'mate-session': 'MATE',
-    'ksmserver': 'KDE',
-    'xfce4-session': 'Xfce',
-    'lxsession': 'LXDE'
-    }
-
-wmDict = {
-    'awesome': 'Awesome',
-    'beryl': 'Beryl',
-    'blackbox': 'Blackbox',
-    'bspwm': 'bspwm',
-    'compiz': 'Compiz',
-    'dwm': 'DWM',
-    'enlightenment': 'Enlightenment',
-    'herbstluftwm': 'herbstluftwm',
-    'fluxbox': 'Fluxbox',
-    'fvwm': 'FVWM',
-    'i3': 'i3',
-    'icewm': 'IceWM',
-    'kwin': 'KWin',
-    'metacity': 'Metacity',
-    'musca': 'Musca',
-    'nemo': 'Nemo',
-    'openbox': 'Openbox',
-    'pekwm': 'PekWM',
-    'ratpoison': 'ratpoison',
-    'scrotwm': 'ScrotWM',
-    'wmaker': 'Window Maker',
-    'wmfs': 'Wmfs',
-    'wmii': 'wmii',
-    'xfwm4': 'Xfwm',
-    'xmonad': 'xmonad'
-    }
-
-envDict = {
-    'LANG': 'en_US.UTF-8'
-}
-
 
 class DistroInfo(object):
 
+    __desktop_env_map__ = {
+        'cinnamon-sessio': 'Cinnamon',
+        'gnome-session': 'GNOME',
+        'mate-session': 'MATE',
+        'ksmserver': 'KDE',
+        'xfce4-session': 'Xfce',
+        'lxsession': 'LXDE'
+    }
+
+    __window_manager_map__ = {
+        'awesome': 'Awesome',
+        'beryl': 'Beryl',
+        'blackbox': 'Blackbox',
+        'bspwm': 'bspwm',
+        'compiz': 'Compiz',
+        'dwm': 'DWM',
+        'enlightenment': 'Enlightenment',
+        'herbstluftwm': 'herbstluftwm',
+        'fluxbox': 'Fluxbox',
+        'fvwm': 'FVWM',
+        'i3': 'i3',
+        'icewm': 'IceWM',
+        'kwin': 'KWin',
+        'metacity': 'Metacity',
+        'musca': 'Musca',
+        'nemo': 'Nemo',
+        'openbox': 'Openbox',
+        'pekwm': 'PekWM',
+        'ratpoison': 'ratpoison',
+        'scrotwm': 'ScrotWM',
+        'wmaker': 'Window Maker',
+        'wmfs': 'Wmfs',
+        'wmii': 'wmii',
+        'xfwm4': 'Xfwm',
+        'xmonad': 'xmonad'
+    }
+
+    __output_order__ = (
+        'user',
+        'hostname',
+        'distro',
+        'kernel',
+        'uptime',
+        'window_manager',
+        'desktop_environment',
+        'shell',
+        'terminal',
+        'packages',
+        'cpu',
+        'ram',
+        'disk'
+    )
+
+    def format_output(self):
+        results = []
+        results.extend([''] * (self._logo_lines_count - len(self.__output_order__)))
+
+        for prop in self.__output_order__:
+            key, value = getattr(self, prop)
+
+            results.append('%s%s: %s%s' % (
+                self.colors[-1],
+                key,
+                colorDict['Clear'][0],
+                value
+            ))
+
+        return self.logo.format(color=self.colors, results=results)
+
+    @property
+    def _logo_lines_count(self):
+        return len(self.logo.strip().split('\n')) - 2
+
+    @staticmethod
+    def _process(command):
+        return Popen(command, stdout=PIPE, stderr=PIPE, shell=True).communicate()
+
+    @property
+    def logo(self):
+        raise NotImplementedError()
+
+    @property
+    def colors(self):
+        raise NotImplementedError()
+
+    @property
+    def user(self):
+        return 'User', getuser()
+
+    @property
+    def hostname(self):
+        return 'Hostname', platform.node()
+
+    @property
+    def distro(self):
+        raise NotImplementedError()
+
+    @property
+    def kernel(self):
+        raise NotImplementedError()
+
+    @property
+    def uptime(self):
+        raise NotImplementedError()
+
+    @property
+    def window_manager(self):
+        raise NotImplementedError()
+
+    @property
+    def desktop_environment(self):
+        raise NotImplementedError()
+
+    @property
+    def shell(self):
+        raise NotImplementedError()
+
+    @property
+    def terminal(self):
+        raise NotImplementedError()
+
+    @property
+    def packages(self):
+        raise NotImplementedError()
+
+    @property
+    def cpu(self):
+        raise NotImplementedError()
+
+    @property
+    def ram(self):
+        raise NotImplementedError()
+
+    @property
+    def disk(self):
+        raise NotImplementedError()
+
+
+class UnixDistroInfo(DistroInfo):
+
     def __init__(self, fullname, package_list_cmd, colors, logo):
-        self.fullname = fullname
-        self.package_list_cmd = package_list_cmd
-        self.colors = colors
-        self.logo = logo
+        self._fullname = fullname
+        self._package_list_cmd = package_list_cmd
+        self._colors = colors
+        self._logo = logo
+        self._sys_encoding = sys.getdefaultencoding()
+        self._process_list = set(unicode(subprocess.check_output(
+            ['ps', '-u', getuser(), '-o', 'comm']
+        ), encoding='utf8').rstrip(LINESEP).split(LINESEP))
+
+    @property
+    def logo(self):
+        return self._logo
+
+    @property
+    def colors(self):
+        return self._colors
+
+    @property
+    def distro(self):
+        return 'Distro', self._fullname
+
+    @property
+    def kernel(self):
+        return 'Kernel', self._process('uname -r')[0].decode(ENCODING).rstrip(LINESEP)
+
+    @property
+    def uptime(self):
+        with open('/proc/uptime') as fr:
+            f_up_time = int(fr.read().split('.')[0])
+
+        day = int(f_up_time / 86400)
+        f_up_time %= 86400
+        hour = int(f_up_time / 3600)
+        f_up_time %= 3600
+        minute = int(f_up_time / 60)
+        up_time = ''
+        if day == 1:
+            up_time += '%d day, ' % day
+        if day > 1:
+            up_time += '%d days, ' % day
+        up_time += '%d:%02d' % (hour, minute)
+        return 'Uptime', up_time
+
+    @property
+    def window_manager(self):
+        window_manager = ''
+        for key in self.__window_manager_map__.keys():
+            if key in self._process_list:
+                window_manager = self.__window_manager_map__[key]
+                break
+
+        return 'Window Manager', window_manager
+
+    @property
+    def desktop_environment(self):
+        desktop_env = ''
+        for key in self.__desktop_env_map__.keys():
+            if key in self._process_list:
+                desktop_env = self.__desktop_env_map__[key]
+                break
+
+        return 'Desktop Environment', desktop_env
+
+    @property
+    def shell(self):
+        return 'Shell', os.getenv('SHELL')
+
+    @property
+    def terminal(self):
+        return 'Terminal', os.getenv('TERM')
+
+    @property
+    def packages(self):
+        if self._package_list_cmd is not None:
+            p1 = self._process(self._package_list_cmd
+            )[0].decode(ENCODING)
+
+            packages = len(p1.rstrip(LINESEP).split(LINESEP))
+        else:
+            packages = 'Unknown'
+
+        return 'Packages', packages
+
+    @property
+    def cpu(self):
+        with open('/proc/cpuinfo') as fr:
+            file = fr.readlines()
+        return 'CPU', re.sub('  +', ' ', file[4].replace('model name\t: ', '').rstrip(LINESEP))
+
+    @property
+    def ram(self):
+        raminfo = self._process('free -m')[0].decode(ENCODING).split(LINESEP)
+        ram = ''.join(filter(re.compile('M').search, raminfo)).split()
+        used = ram[2]
+        total = ram[1]
+        used_percent = ((float(used) / float(total)) * 100)
+        if used_percent <= 33:
+            ram_display = '%s%s MB %s/ %s MB' % (colorDict['Sensors'][1], used, colorDict['Clear'][0], total)
+
+        if 33 < used_percent < 67:
+            ram_display = '%s%s MB %s/ %s MB' % (colorDict['Sensors'][2], used, colorDict['Clear'][0], total)
+
+        if used_percent >= 67:
+            ram_display = '%s%s MB %s/ %s MB' % (colorDict['Sensors'][0], used, colorDict['Clear'][0], total)
+
+        return 'RAM', ram_display
+
+    @property
+    def disk(self):
+        process_result = self._process("""
+            df -Tlh -B GB --total
+            -t ext4
+            -t ext3
+            -t ext2
+            -t reiserfs
+            -t jfs
+            -t ntfs
+            -t fat32
+            -t btrfs
+            -t fuseblk
+            -t xfs
+        """)[0].decode(ENCODING)
+
+        total = process_result.splitlines()[-1].split()
+        used = total[3]
+        size = total[2]
+        used_percent = float(total[5][:-1])
+
+        if used_percent <= 33:
+            disk = '%s%s %s/ %s' % (colorDict['Sensors'][1], used, colorDict['Clear'][0], size)
+
+        if 33 < used_percent < 67:
+            disk = '%s%s %s/ %s' % (colorDict['Sensors'][2], used, colorDict['Clear'][0], size)
+
+        if used_percent >= 67:
+            disk = '%s%s %s/ %s' % (colorDict['Sensors'][0], used, colorDict['Clear'][0], size)
+
+        return 'Disk', disk
+
+
+class WindowsDistroInfo(DistroInfo):
+    def __init__(self, package_list_cmd, colors, logo):
+        self._package_list_cmd = package_list_cmd
+        self._colors = colors
+        self._logo = logo
+
+    @property
+    def fullname(self):
+        if self.is_cygwin:
+            return 'Cygwin %s' % os.uname()[2]
+        else:
+            release, build, service_pack, _ = platform.win32_ver()
+            return 'MS Windows %s %s' % (release, service_pack)
+
+    @property
+    def is_cygwin(self):
+        return sys.platform == 'cygwin'
+
+    @property
+    def kernel(self):
+        if self.is_cygwin:
+            return platform.system()
+        else:
+            return 'Windows %s' % platform.win32_ver()[1]
 
 
 DISTROS = {
-    'arch': DistroInfo(
+    'windows': WindowsDistroInfo(
+        package_list_cmd='choco list -li',
+        colors=['\x1b[0;34m', '\x1b[1;34m'],
+        logo="""{color[1]}
+{color[1]}               +                {results[0]}
+{color[1]}               #                {results[1]}
+{color[1]}              ###               {results[2]}
+{color[1]}             #####              {results[3]}
+{color[1]}             ######             {results[4]}
+{color[1]}            ; #####;            {results[5]}
+{color[1]}           +##.#####            {results[6]}
+{color[1]}          +##########           {results[7]}
+{color[1]}         ######{color[0]}#####{color[1]}##;         {results[8]}
+{color[1]}        ###{color[0]}############{color[1]}+        {results[9]}
+{color[1]}       #{color[0]}######   #######        {results[10]}
+{color[0]}     .######;     ;###;`\".      {results[11]}
+{color[0]}    .#######;     ;#####.       {results[12]}
+{color[0]}    #########.   .########`     {results[13]}
+{color[0]}   ######'           '######    {results[14]}
+{color[0]}  ;####                 ####;   {results[15]}
+{color[0]}  ##'                     '##   {results[16]}
+{color[0]} #'                         `#  {results[17]}
+\x1b[0m""".strip()
+    ),
+    'arch': UnixDistroInfo(
         fullname='Arch Linux',
         package_list_cmd='pacman -Q',
         colors=['\x1b[0;34m', '\x1b[1;34m'],
@@ -137,7 +424,7 @@ DISTROS = {
 {color[0]} #'                         `#  {results[17]}
 \x1b[0m""".strip()
     ),
-    'gentoo': DistroInfo(
+    'gentoo': UnixDistroInfo(
         fullname='Gentoo Linux',
         package_list_cmd='ls -d /var/db/pkg/*/*| cut -f5- -d/',
         colors=['\x1b[1;37m', '\x1b[1;35m'],
@@ -162,7 +449,7 @@ DISTROS = {
 {color[1]}    \`-//////:--.                        {results[17]})
 \x1b[0m""".strip()
     ),
-    'ubuntu': DistroInfo(
+    'ubuntu': UnixDistroInfo(
         fullname='Ubuntu Linux',
         package_list_cmd='dpkg -l',
         colors=['\x1b[1;37m', '\x1b[1;31m', '\x1b[1;33m'],
@@ -187,7 +474,7 @@ DISTROS = {
 {color[2]}                           \`oo++.          {results[17]}
 \x1b[0m"""
     ),
-    'other': DistroInfo(
+    'other': UnixDistroInfo(
         fullname='Unknown Linux',
         package_list_cmd=None,
         colors=['\x1b[1;37m', '\x1b[1;30m', '\x1b[1;33m'],
@@ -208,258 +495,30 @@ DISTROS = {
     )
 }
 
-processes = unicode(subprocess.check_output(
-    ('ps', '-u', getuser(), '-o', 'comm', '--no-headers')
-), encoding='utf8').rstrip('\n').split('\n')
 
-# ---------------Classes---------------#
+def distro_detect():
 
-
-class Distro(object):
-
-    __instance__ = None
-
-    def __init__(self):
-        self.key = 'Distro'
-
+    if sys.platform == 'linux':
         distro = getattr(platform, 'linux_distribution')()[0].split(' ')[0].lower()
-        for k, v in DISTROS.items():
-            if distro == k:
-                self.distro = k
-                break
-        else:
-            self.distro = 'other'
+        if distro not in DISTROS:
+            distro = 'other'
 
-    @classmethod
-    def get(cls):
-        if cls.__instance__ is None:
-            cls.__instance__ = cls()
-        return cls.__instance__
+    elif sys.platform == 'darwin':
+        distro = 'osx'
 
-    @property
-    def value(self):
-        return DISTROS[self.distro].fullname
+    elif sys.platform.startswith('win') or sys.platform == 'cygwin':
+        distro = 'windows'
 
-    @property
-    def package_list_cmd(self):
-        return DISTROS[self.distro].package_list_cmd
+    else:
+        sys.stderr.write('Unsupported OS!\n')
+        sys.exit(1)
 
-    @property
-    def colors(self):
-        return DISTROS[self.distro].colors
-
-    @property
-    def logo(self):
-        return DISTROS[self.distro].logo
-
-    @property
-    def lines_count(self):
-        return len(DISTROS[self.distro].logo.split('\n')) - 2
+    return distro
 
 
-class Output(object):
-    results = []
-    results.extend([''] * (Distro.get().lines_count - len(output)))
+def main():
+    distro = DISTROS[distro_detect()]
+    print(distro.format_output())
 
-    def __init__(self):
-        self.distro = Distro.get()
-
-    def append(self, display):
-        self.results.append('%s%s: %s%s' % (
-            self.distro.colors[-1],
-            display.key,
-            colorDict['Clear'][0],
-            display.value
-        ))
-
-    def output(self):
-        print(self.distro.logo.format(color=self.distro.colors, results=self.results))
-
-
-class User(object):
-
-    def __init__(self):
-        self.key = 'User'
-        self.value = os.getenv('USER')
-
-
-class Hostname(object):
-
-    def __init__(self):
-        hostname = Popen(['uname', '-n'], stdout=PIPE, env=envDict).communicate()[0].decode('Utf-8').rstrip('\n')
-        self.key = 'Hostname'
-        self.value = hostname
-
-
-class Kernel(object):
-
-    def __init__(self):
-        kernel = Popen(['uname', '-r'], stdout=PIPE, env=envDict).communicate()[0].decode('Utf-8').rstrip('\n')
-        self.key = 'Kernel'
-        self.value = kernel
-
-
-class Uptime(object):
-
-    def __init__(self):
-        fuptime = int(open('/proc/uptime').read().split('.')[0])
-        day = int(fuptime / 86400)
-        fuptime %= 86400
-        hour = int(fuptime / 3600)
-        fuptime %= 3600
-        minute = int(fuptime / 60)
-        uptime = ''
-        if day == 1:
-            uptime += '%d day, ' % day
-        if day > 1:
-            uptime += '%d days, ' % day
-        uptime += '%d:%02d' % (hour, minute)
-        self.key = 'Uptime'
-        self.value = uptime
-
-
-class WindowManager(object):
-
-    def __init__(self):
-        wm = ''
-        for key in wmDict.keys():
-            if key in processes:
-                wm = wmDict[key]
-                break
-
-        self.key = 'Window Manager'
-        self.value = wm
-
-
-class DesktopEnvironment(object):
-
-    def __init__(self):
-        de = ''
-        for key in deDict.keys():
-            if key in processes:
-                de = deDict[key]
-                break
-
-        self.key = 'Desktop Environment'
-        self.value = de
-
-
-class Shell(object):
-
-    def __init__(self):
-        self.key = 'Shell'
-        self.value = os.getenv('SHELL')
-
-
-class Terminal(object):
-
-    def __init__(self):
-        self.key = 'Terminal'
-        self.value = os.getenv('TERM')
-
-
-class Packages(object):
-
-    def __init__(self):
-        self.distro = Distro.get()
-
-        if self.distro.package_list_cmd is not None:
-            p1 = Popen(
-                self.distro.package_list_cmd,
-                stdout=PIPE,
-                env=envDict,
-                shell=True
-            ).communicate()[0].decode('utf-8')
-
-            packages = len(p1.rstrip('\n').split('\n'))
-        else:
-            packages = 'Unknown'
-
-        self.key = 'Packages'
-        self.value = packages
-
-
-class CPU(object):
-
-    def __init__(self):
-        file = open('/proc/cpuinfo').readlines()
-        cpuinfo = re.sub('  +', ' ', file[4].replace('model name\t: ', '').rstrip('\n'))
-        self.key = 'CPU'
-        self.value = cpuinfo
-
-
-class RAM(object):
-
-    def __init__(self):
-        raminfo = Popen(['free', '-m'], stdout=PIPE, env=envDict).communicate()[0].decode('Utf-8').split('\n')
-        ram = ''.join(filter(re.compile('M').search, raminfo)).split()
-        used = ram[2]
-        total = ram[1]
-        usedpercent = ((float(used) / float(total)) * 100)
-        if usedpercent <= 33:
-            ramdisplay = '%s%s MB %s/ %s MB' % (colorDict['Sensors'][1], used, colorDict['Clear'][0], total)
-
-        if 33 < usedpercent < 67:
-            ramdisplay = '%s%s MB %s/ %s MB' % (colorDict['Sensors'][2], used, colorDict['Clear'][0], total)
-
-        if usedpercent >= 67:
-            ramdisplay = '%s%s MB %s/ %s MB' % (colorDict['Sensors'][0], used, colorDict['Clear'][0], total)
-
-        self.key = 'RAM'
-        self.value = ramdisplay
-
-
-class Disk(object):
-
-    def __init__(self):
-        p1 = Popen([
-            'df', '-Tlh', '-B', 'GB', '--total',
-            '-t', 'ext4',
-            '-t', 'ext3',
-            '-t', 'ext2',
-            '-t', 'reiserfs',
-            '-t', 'jfs',
-            '-t', 'ntfs',
-            '-t', 'fat32',
-            '-t', 'btrfs',
-            '-t', 'fuseblk',
-            '-t', 'xfs'
-        ], stdout=PIPE, env=envDict).communicate()[0].decode("Utf-8")
-
-        total = p1.splitlines()[-1]
-        used = total.split()[3]
-        size = total.split()[2]
-        usedpercent = float(total.split()[5][:-1])
-        
-        if usedpercent <= 33:
-            disk = '%s%s %s/ %s' % (colorDict['Sensors'][1], used, colorDict['Clear'][0], size)  
-
-        if 33 < usedpercent < 67:
-            disk = '%s%s %s/ %s' % (colorDict['Sensors'][2], used, colorDict['Clear'][0], size)  
-
-        if usedpercent >= 67:
-            disk = '%s%s %s/ %s' % (colorDict['Sensors'][0], used, colorDict['Clear'][0], size)  
-
-        self.key = 'Disk'
-        self.value = disk
-
-classes = {
-    'User': User,
-    'Hostname': Hostname,
-    'Distro': Distro,
-    'Kernel': Kernel,
-    'Uptime': Uptime,
-    'WindowManager': WindowManager,
-    'DesktopEnvironment': DesktopEnvironment,
-    'Shell': Shell,
-    'Terminal': Terminal,
-    'Packages': Packages,
-    'CPU': CPU,
-    'RAM': RAM,
-    'Disk': Disk
- }
-
-out = Output()
-for x in output:
-    out.append(classes[x]())
-out.output()
+if __name__ == '__main__':
+    main()

@@ -1,5 +1,5 @@
 # Dotfiles
-My personal dotfiles and configurations for my installed Arch and Gentoo distributions.
+My personal dotfiles and configurations for my installed Arch, Gentoo and Ubuntu distributions.
 
 Gentoo config is for my Virtualboxed Gentoo which is hosted in my Lenovo E540 Laptop.
 
