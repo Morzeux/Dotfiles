@@ -26,7 +26,7 @@ import re
 from subprocess import Popen, PIPE
 from getpass import getuser
 from collections import OrderedDict
-from datetime import datetime
+from datetime import datetime, timedelta
 
 
 ENCODING = sys.getdefaultencoding()
@@ -36,38 +36,18 @@ LINESEP = os.linesep
 if sys.version_info >= (3, 0):
     unicode = str
 
-# ---------------Output---------------#
+class DistroInfo(object):
 
-output = [
-    'User',
-    'Hostname',
-    'Distro',
-    'Kernel',
-    'Uptime',
-    'WindowManager',
-    'DesktopEnvironment',
-    'Shell',
-    'Terminal',
-    'Packages',
-    'CPU',
-    'RAM',
-    'Disk'
-]
- 
-# ---------------Dictionaries---------------#
-
-colorDict = {
-    'Ubuntu': ['\x1b[0;31m', '\x1b[1;31m', '\x1b[0;33m'],
-    'Debian': ['\x1b[0;31m', '\x1b[1;31m'],
-    'Mint': ['\x1b[0;32m', '\x1b[1;37m'],
-    'Crunchbang': ['\x1b[1;37m'],
-    'Fedora': ['\x1b[0;34m', '\x1b[1;37m'],
-    'Sensors': ['\x1b[0;31m', '\x1b[0;32m', '\x1b[0;33m'],
-    'Clear': ['\x1b[0m']
+    __color_dict__ = {
+        'Ubuntu': ['\x1b[0;31m', '\x1b[1;31m', '\x1b[0;33m'],
+        'Debian': ['\x1b[0;31m', '\x1b[1;31m'],
+        'Mint': ['\x1b[0;32m', '\x1b[1;37m'],
+        'Crunchbang': ['\x1b[1;37m'],
+        'Fedora': ['\x1b[0;34m', '\x1b[1;37m'],
+        'Sensors': ['\x1b[0;31m', '\x1b[0;32m', '\x1b[0;33m'],
+        'Clear': ['\x1b[0m']
     }
 
-
-class DistroInfo(object):
 
     __desktop_env_map__ = {
         'cinnamon-sessio': 'Cinnamon',
@@ -135,26 +115,25 @@ class DistroInfo(object):
             results.append('%s%s: %s%s' % (
                 self.colors[-1],
                 key,
-                colorDict['Clear'][0],
+                self.__color_dict__['Clear'][0],
                 value
             ))
 
         return self.logo.format(color=self.colors, results=results)
 
-    @staticmethod
-    def _format_usage_output(used, total, unit):
+    def _format_usage_output(self, used, total, unit):
         used = int(used)
         total = int(total)
         used_percent = (float(used) / float(total)) * 100
 
         if used_percent <= 33:
-            usage = '%s%s%s %s/ %s%s' % (colorDict['Sensors'][1], used, unit, colorDict['Clear'][0], total, unit)
+            usage = '%s%s%s %s/ %s%s' % (self.__color_dict__['Sensors'][1], used, unit, self.__color_dict__['Clear'][0], total, unit)
 
         if 33 < used_percent < 67:
-            usage = '%s%s%s %s/ %s%s' % (colorDict['Sensors'][2], used, unit, colorDict['Clear'][0], total, unit)
+            usage = '%s%s%s %s/ %s%s' % (self.__color_dict__['Sensors'][2], used, unit, self.__color_dict__['Clear'][0], total, unit)
 
         if used_percent >= 67:
-            usage = '%s%s%s %s/ %s%s' % (colorDict['Sensors'][0], used, unit, colorDict['Clear'][0], total, unit)
+            usage = '%s%s%s %s/ %s%s' % (self.__color_dict__['Sensors'][0], used, unit, self.__color_dict__['Clear'][0], total, unit)
 
         return usage
 
@@ -164,7 +143,7 @@ class DistroInfo(object):
 
     @staticmethod
     def _process(command):
-        return Popen(command, stdout=PIPE, stderr=PIPE, shell=True).communicate()[0].decode(ENCODING)
+        return Popen(command, stdout=PIPE, stderr=PIPE, shell=True).communicate()[0].decode(ENCODING, 'ignore')
 
     @property
     def logo(self):
@@ -235,9 +214,15 @@ class UnixDistroInfo(DistroInfo):
         self._colors = colors
         self._logo = logo
         self._sys_encoding = sys.getdefaultencoding()
-        self._process_list = set(unicode(subprocess.check_output(
-            ['ps', '-u', getuser(), '-o', 'comm']
-        ), encoding='utf8').rstrip(LINESEP).split(LINESEP))
+        self._process_list = None
+
+    @property
+    def process_list(self):
+        if self._process_list is None:
+            self._process_list = set(unicode(subprocess.check_output(
+                ['ps', '-u', getuser(), '-o', 'comm']
+            ), encoding='utf8').rstrip(LINESEP).split(LINESEP))
+        return self._process_list
 
     @property
     def logo(self):
@@ -277,7 +262,7 @@ class UnixDistroInfo(DistroInfo):
     def window_manager(self):
         window_manager = ''
         for key in self.__window_manager_map__.keys():
-            if key in self._process_list:
+            if key in self.process_list:
                 window_manager = self.__window_manager_map__[key]
                 break
 
@@ -287,7 +272,7 @@ class UnixDistroInfo(DistroInfo):
     def desktop_environment(self):
         desktop_env = ''
         for key in self.__desktop_env_map__.keys():
-            if key in self._process_list:
+            if key in self.process_list:
                 desktop_env = self.__desktop_env_map__[key]
                 break
 
@@ -351,6 +336,13 @@ class UnixDistroInfo(DistroInfo):
 
 class WindowsDistroInfo(DistroInfo):
 
+    FOREGROUND_BLUE = 0x0001
+
+    __color_dict__ = {
+        'Sensors': ['\x1b[0;31m', '\x1b[0;32m', '\x1b[0;33m'],
+        'Clear': ['\x1b[0m']
+    }
+
     __shells__ = {
         'bash.exe': 'Bash',
         'cmd.exe': 'Command Prompt',
@@ -361,6 +353,14 @@ class WindowsDistroInfo(DistroInfo):
         self._package_list_cmd = package_list_cmd
         self._colors = colors
         self._logo = logo
+        if not self.is_cygwin:
+            self.__color_dict__ = {
+                'Sensors': ['', '', ''],
+                'Clear': ['']
+            }
+            self._colors = list('' for _ in self._colors)
+        else:
+            self._logo += '\x1b[0m'
 
         processes = self._process('tasklist').strip().splitlines()[4:]
         self._process_list = set(x.split(' ')[0].strip().lower() for x in processes)
@@ -387,7 +387,7 @@ class WindowsDistroInfo(DistroInfo):
         else:
             kernel = '%s %s' % (os.getenv('OS'), self._wmic_process('wmic os get version'))
 
-        return kernel
+        return kernel.strip()
 
     @property
     def uptime(self):
@@ -396,7 +396,7 @@ class WindowsDistroInfo(DistroInfo):
         value = re.match(r'.+(\d\d\..+)', value).groups()[0]
         value = datetime.strptime(value, '%d. %m. %Y %H:%M:%S')
         diff = (datetime.now() - value).seconds
-        return str(datetime.timedelta(seconds=diff))
+        return str(timedelta(seconds=diff))
 
     @property
     def window_manager(self):
@@ -447,7 +447,7 @@ class WindowsDistroInfo(DistroInfo):
         counter = 0
         ppgs1_rgx = re.compile(r'\d+ packages installed.')
         ppgs2_rgx = re.compile(r'\d+ applications not managed with Chocolatey.')
-        for line in self._process(self._package_list_cmd).communicate()[0]:
+        for line in self._process(self._package_list_cmd).splitlines():
             line = line.strip()
             if not line or ppgs1_rgx.match(line) or ppgs2_rgx.match(line):
                 continue
@@ -464,6 +464,9 @@ class WindowsDistroInfo(DistroInfo):
         memory_total = int(self._wmic_process('wmic os get totalvisiblememorysize'))
         used_memory = memory_total - int(self._wmic_process('wmic os get freephysicalmemory'))
 
+        used_memory /= 1000
+        memory_total /= 1000
+
         return self._format_usage_output(used_memory, memory_total, 'MB')
 
     @property
@@ -475,9 +478,10 @@ class WindowsDistroInfo(DistroInfo):
         free_space = 0
         space_total = 0
         for free, total in disk_spaces:
-            free_space += free
-            space_total += total
-        used_space = space_total - free_space
+            free_space += int(free)
+            space_total += int(total)
+        used_space = (space_total - free_space) / 1000000000
+        space_total /= 1000000000
 
         return self._format_usage_output(used_space, space_total, 'GB')
 
@@ -489,7 +493,7 @@ class WindowsDistroInfo(DistroInfo):
 DISTROS = {
     'windows': WindowsDistroInfo(
         package_list_cmd='choco list -li',
-        colors=['\x1b[0;30m', '\x1b[1;34m'],
+        colors=['\x1b[1;0m', '\x1b[1;34m'],
         logo="""{color[0]}
 {color[0]}                      ,,,:::   {results[0]}
 {color[0]}                ,,,:::::::::   {results[1]}
@@ -504,7 +508,7 @@ DISTROS = {
 {color[0]}         '''::: ::::::::::::   {results[10]}
 {color[0]}                ''':::::::::   {results[11]}
 {color[0]}                      ''':::   {results[12]}
-\x1b[0m""".strip()
+"""
     ),
     'arch': UnixDistroInfo(
         fullname='Arch Linux',
