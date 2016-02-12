@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-# Archey [version 0.5.0]
+# Archey [version 0.6.0a]
 #
 # Archey is a simple system information tool written in Python.
 #
@@ -25,6 +25,8 @@ import subprocess
 import re
 from subprocess import Popen, PIPE
 from getpass import getuser
+from collections import OrderedDict
+from datetime import datetime
 
 
 ENCODING = sys.getdefaultencoding()
@@ -101,31 +103,34 @@ class DistroInfo(object):
         'wmfs': 'Wmfs',
         'wmii': 'wmii',
         'xfwm4': 'Xfwm',
-        'xmonad': 'xmonad'
+        'xmonad': 'xmonad',
+
+        'dwm.exe': 'Desktop Window Manager',
+        'explorer.exe': 'Windows Explorer'
     }
 
-    __output_order__ = (
-        'user',
-        'hostname',
-        'distro',
-        'kernel',
-        'uptime',
-        'window_manager',
-        'desktop_environment',
-        'shell',
-        'terminal',
-        'packages',
-        'cpu',
-        'ram',
-        'disk'
-    )
+    __output_order__ = OrderedDict([
+        ('user', 'User'),
+        ('hostname', 'Hostname'),
+        ('distro', 'Distro'),
+        ('kernel', 'Kernel'),
+        ('uptime', 'Uptime'),
+        ('window_manager', 'Window Manager'),
+        ('desktop_environment', 'Desktop Environment'),
+        ('shell', 'Shell'),
+        ('terminal', 'Terminal'),
+        ('packages', 'Packages'),
+        ('cpu', 'CPU'),
+        ('ram', 'RAM'),
+        ('disk', 'Disk')
+    ])
 
     def format_output(self):
         results = []
         results.extend([''] * (self._logo_lines_count - len(self.__output_order__)))
 
-        for prop in self.__output_order__:
-            key, value = getattr(self, prop)
+        for prop, key in self.__output_order__.items():
+            value = getattr(self, prop)
 
             results.append('%s%s: %s%s' % (
                 self.colors[-1],
@@ -136,13 +141,30 @@ class DistroInfo(object):
 
         return self.logo.format(color=self.colors, results=results)
 
+    @staticmethod
+    def _format_usage_output(used, total, unit):
+        used = int(used)
+        total = int(total)
+        used_percent = (float(used) / float(total)) * 100
+
+        if used_percent <= 33:
+            usage = '%s%s%s %s/ %s%s' % (colorDict['Sensors'][1], used, unit, colorDict['Clear'][0], total, unit)
+
+        if 33 < used_percent < 67:
+            usage = '%s%s%s %s/ %s%s' % (colorDict['Sensors'][2], used, unit, colorDict['Clear'][0], total, unit)
+
+        if used_percent >= 67:
+            usage = '%s%s%s %s/ %s%s' % (colorDict['Sensors'][0], used, unit, colorDict['Clear'][0], total, unit)
+
+        return usage
+
     @property
     def _logo_lines_count(self):
         return len(self.logo.strip().split('\n')) - 2
 
     @staticmethod
     def _process(command):
-        return Popen(command, stdout=PIPE, stderr=PIPE, shell=True).communicate()
+        return Popen(command, stdout=PIPE, stderr=PIPE, shell=True).communicate()[0].decode(ENCODING)
 
     @property
     def logo(self):
@@ -154,11 +176,11 @@ class DistroInfo(object):
 
     @property
     def user(self):
-        return 'User', getuser()
+        return getuser()
 
     @property
     def hostname(self):
-        return 'Hostname', platform.node()
+        return platform.node()
 
     @property
     def distro(self):
@@ -227,11 +249,11 @@ class UnixDistroInfo(DistroInfo):
 
     @property
     def distro(self):
-        return 'Distro', self._fullname
+        return self._fullname
 
     @property
     def kernel(self):
-        return 'Kernel', self._process('uname -r')[0].decode(ENCODING).rstrip(LINESEP)
+        return self._process('uname -r').rstrip(LINESEP)
 
     @property
     def uptime(self):
@@ -249,7 +271,7 @@ class UnixDistroInfo(DistroInfo):
         if day > 1:
             up_time += '%d days, ' % day
         up_time += '%d:%02d' % (hour, minute)
-        return 'Uptime', up_time
+        return up_time
 
     @property
     def window_manager(self):
@@ -259,7 +281,7 @@ class UnixDistroInfo(DistroInfo):
                 window_manager = self.__window_manager_map__[key]
                 break
 
-        return 'Window Manager', window_manager
+        return window_manager
 
     @property
     def desktop_environment(self):
@@ -269,51 +291,40 @@ class UnixDistroInfo(DistroInfo):
                 desktop_env = self.__desktop_env_map__[key]
                 break
 
-        return 'Desktop Environment', desktop_env
+        return desktop_env
 
     @property
     def shell(self):
-        return 'Shell', os.getenv('SHELL')
+        return os.getenv('SHELL')
 
     @property
     def terminal(self):
-        return 'Terminal', os.getenv('TERM')
+        return os.getenv('TERM')
 
     @property
     def packages(self):
         if self._package_list_cmd is not None:
-            p1 = self._process(self._package_list_cmd
-            )[0].decode(ENCODING)
-
+            p1 = self._process(self._package_list_cmd)
             packages = len(p1.rstrip(LINESEP).split(LINESEP))
         else:
             packages = 'Unknown'
 
-        return 'Packages', packages
+        return packages
 
     @property
     def cpu(self):
         with open('/proc/cpuinfo') as fr:
             file = fr.readlines()
-        return 'CPU', re.sub('  +', ' ', file[4].replace('model name\t: ', '').rstrip(LINESEP))
+        return re.sub('  +', ' ', file[4].replace('model name\t: ', '').rstrip(LINESEP))
 
     @property
     def ram(self):
-        raminfo = self._process('free -m')[0].decode(ENCODING).split(LINESEP)
+        raminfo = self._process('free -m').split(LINESEP)
         ram = ''.join(filter(re.compile('M').search, raminfo)).split()
         used = ram[2]
         total = ram[1]
-        used_percent = ((float(used) / float(total)) * 100)
-        if used_percent <= 33:
-            ram_display = '%s%s MB %s/ %s MB' % (colorDict['Sensors'][1], used, colorDict['Clear'][0], total)
 
-        if 33 < used_percent < 67:
-            ram_display = '%s%s MB %s/ %s MB' % (colorDict['Sensors'][2], used, colorDict['Clear'][0], total)
-
-        if used_percent >= 67:
-            ram_display = '%s%s MB %s/ %s MB' % (colorDict['Sensors'][0], used, colorDict['Clear'][0], total)
-
-        return 'RAM', ram_display
+        return self._format_usage_output(used, total, 'MB')
 
     @property
     def disk(self):
@@ -329,74 +340,170 @@ class UnixDistroInfo(DistroInfo):
             -t btrfs
             -t fuseblk
             -t xfs
-        """)[0].decode(ENCODING)
+        """)
 
         total = process_result.splitlines()[-1].split()
-        used = total[3]
-        size = total[2]
-        used_percent = float(total[5][:-1])
+        used = re.match(r'(\d+).*', total[3]).groups()[0]
+        size = re.match(r'(\d+).*', total[2]).groups()[0]
 
-        if used_percent <= 33:
-            disk = '%s%s %s/ %s' % (colorDict['Sensors'][1], used, colorDict['Clear'][0], size)
-
-        if 33 < used_percent < 67:
-            disk = '%s%s %s/ %s' % (colorDict['Sensors'][2], used, colorDict['Clear'][0], size)
-
-        if used_percent >= 67:
-            disk = '%s%s %s/ %s' % (colorDict['Sensors'][0], used, colorDict['Clear'][0], size)
-
-        return 'Disk', disk
+        return self._format_usage_output(used, size, 'GB')
 
 
 class WindowsDistroInfo(DistroInfo):
+
+    __shells__ = {
+        'bash.exe': 'Bash',
+        'cmd.exe': 'Command Prompt',
+        'powershell.exe': 'Windows PowerShell'
+    }
+
     def __init__(self, package_list_cmd, colors, logo):
         self._package_list_cmd = package_list_cmd
         self._colors = colors
         self._logo = logo
 
-    @property
-    def fullname(self):
-        if self.is_cygwin:
-            return 'Cygwin %s' % os.uname()[2]
-        else:
-            release, build, service_pack, _ = platform.win32_ver()
-            return 'MS Windows %s %s' % (release, service_pack)
+        processes = self._process('tasklist').strip().splitlines()[4:]
+        self._process_list = set(x.split(' ')[0].strip().lower() for x in processes)
+
+    def _wmic_process(self, command):
+        return self._process(command).strip().splitlines()[-1].strip()
 
     @property
-    def is_cygwin(self):
-        return sys.platform == 'cygwin'
+    def logo(self):
+        return self._logo
+
+    @property
+    def colors(self):
+        return self._colors
+
+    @property
+    def distro(self):
+        return self._wmic_process('wmic os get caption')
 
     @property
     def kernel(self):
         if self.is_cygwin:
-            return platform.system()
+            kernel = self._process('uname -sr')
         else:
-            return 'Windows %s' % platform.win32_ver()[1]
+            kernel = '%s %s' % (os.getenv('OS'), self._wmic_process('wmic os get version'))
+
+        return kernel
+
+    @property
+    def uptime(self):
+        value = self._process('net stats workstation').strip()
+        value = list(x.strip() for x in value.splitlines() if x.strip())[1]
+        value = re.match(r'.+(\d\d\..+)', value).groups()[0]
+        value = datetime.strptime(value, '%d. %m. %Y %H:%M:%S')
+        diff = (datetime.now() - value).seconds
+        return str(datetime.timedelta(seconds=diff))
+
+    @property
+    def window_manager(self):
+        for window_manager in ['dwm.exe']:
+            if window_manager in self._process_list:
+                break
+        else:
+            window_manager = 'explorer.exe'
+
+        return self.__window_manager_map__[window_manager]
+
+    @property
+    def desktop_environment(self):
+        number = int(re.match(r'(\d+)\..+', self._wmic_process('wmic os get version')).groups()[0])
+        return {
+            5: 'Luna',
+            6: 'Aero'
+        }.get(number, '')
+
+    @property
+    def shell(self):
+        if self.is_cygwin:
+            shell = 'bash.exe'
+        else:
+            for shell in ['powershell.exe', 'cmd.exe']:
+                if shell in self._process_list:
+                    break
+            else:
+                shell = ''
+
+        return self.__shells__.get(shell, '')
+
+    @property
+    def terminal(self):
+        if self.is_cygwin:
+            return 'Cygwin Terminal'
+        else:
+            for shell in ['powershell.exe', 'cmd.exe']:
+                if shell in self._process_list:
+                    break
+            else:
+                shell = ''
+
+        return self.__shells__.get(shell, '')
+
+    @property
+    def packages(self):
+        counter = 0
+        ppgs1_rgx = re.compile(r'\d+ packages installed.')
+        ppgs2_rgx = re.compile(r'\d+ applications not managed with Chocolatey.')
+        for line in self._process(self._package_list_cmd).communicate()[0]:
+            line = line.strip()
+            if not line or ppgs1_rgx.match(line) or ppgs2_rgx.match(line):
+                continue
+            counter += 1
+
+        return str(counter)
+
+    @property
+    def cpu(self):
+        return self._wmic_process('wmic cpu get name')
+
+    @property
+    def ram(self):
+        memory_total = int(self._wmic_process('wmic os get totalvisiblememorysize'))
+        used_memory = memory_total - int(self._wmic_process('wmic os get freephysicalmemory'))
+
+        return self._format_usage_output(used_memory, memory_total, 'MB')
+
+    @property
+    def disk(self):
+        disk_spaces = self._process('wmic logicaldisk get freespace, size').strip().splitlines()[1:]
+        disk_spaces = [line.strip() for line in disk_spaces if line.strip()]
+        disk_rgx = re.compile(r'(\d+)\s+(\d+)')
+        disk_spaces = [disk_rgx.match(line).groups() for line in disk_spaces]
+        free_space = 0
+        space_total = 0
+        for free, total in disk_spaces:
+            free_space += free
+            space_total += total
+        used_space = space_total - free_space
+
+        return self._format_usage_output(used_space, space_total, 'GB')
+
+    @property
+    def is_cygwin(self):
+        return sys.platform.lower().startswith('cygwin')
 
 
 DISTROS = {
     'windows': WindowsDistroInfo(
         package_list_cmd='choco list -li',
-        colors=['\x1b[0;34m', '\x1b[1;34m'],
-        logo="""{color[1]}
-{color[1]}               +                {results[0]}
-{color[1]}               #                {results[1]}
-{color[1]}              ###               {results[2]}
-{color[1]}             #####              {results[3]}
-{color[1]}             ######             {results[4]}
-{color[1]}            ; #####;            {results[5]}
-{color[1]}           +##.#####            {results[6]}
-{color[1]}          +##########           {results[7]}
-{color[1]}         ######{color[0]}#####{color[1]}##;         {results[8]}
-{color[1]}        ###{color[0]}############{color[1]}+        {results[9]}
-{color[1]}       #{color[0]}######   #######        {results[10]}
-{color[0]}     .######;     ;###;`\".      {results[11]}
-{color[0]}    .#######;     ;#####.       {results[12]}
-{color[0]}    #########.   .########`     {results[13]}
-{color[0]}   ######'           '######    {results[14]}
-{color[0]}  ;####                 ####;   {results[15]}
-{color[0]}  ##'                     '##   {results[16]}
-{color[0]} #'                         `#  {results[17]}
+        colors=['\x1b[0;30m', '\x1b[1;34m'],
+        logo="""{color[0]}
+{color[0]}                      ,,,:::   {results[0]}
+{color[0]}                ,,,:::::::::   {results[1]}
+{color[0]}         ,,,::: ::::::::::::   {results[2]}
+{color[0]}   ,,,::::::::: ::::::::::::   {results[3]}
+{color[0]}   :::::::::::: ::::::::::::   {results[4]}
+{color[0]}   :::::::::::: ::::::::::::   {results[5]}
+{color[0]}   ............ ............   {results[6]}
+{color[0]}   :::::::::::: ::::::::::::   {results[7]}
+{color[0]}   :::::::::::: ::::::::::::   {results[8]}
+{color[0]}   '''::::::::: ::::::::::::   {results[9]}
+{color[0]}         '''::: ::::::::::::   {results[10]}
+{color[0]}                ''':::::::::   {results[11]}
+{color[0]}                      ''':::   {results[12]}
 \x1b[0m""".strip()
     ),
     'arch': UnixDistroInfo(
@@ -446,7 +553,7 @@ DISTROS = {
 {color[1]}  yM{color[0]}MNNNNNNNmmmmmNNMmhs+/{color[1]}-\`             {results[14]}
 {color[1]}  /h{color[0]}MMNNNNNNNNMNdhs++/{color[1]}-\`                {results[15]}
 {color[1]}  \`/{color[0]}ohdmmddhys+++/:{color[1]}.\`                  {results[16]}
-{color[1]}    \`-//////:--.                        {results[17]})
+{color[1]}    \`-//////:--.                        {results[17]}
 \x1b[0m""".strip()
     ),
     'ubuntu': UnixDistroInfo(
@@ -498,15 +605,17 @@ DISTROS = {
 
 def distro_detect():
 
-    if sys.platform == 'linux':
+    kernel_type = sys.platform.lower()
+
+    if kernel_type.startswith('linux'):
         distro = getattr(platform, 'linux_distribution')()[0].split(' ')[0].lower()
         if distro not in DISTROS:
             distro = 'other'
 
-    elif sys.platform == 'darwin':
+    elif kernel_type.startswith('darwin'):
         distro = 'osx'
 
-    elif sys.platform.startswith('win') or sys.platform == 'cygwin':
+    elif kernel_type.startswith('win') or kernel_type.startswith('cygwin'):
         distro = 'windows'
 
     else:
