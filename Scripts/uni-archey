@@ -28,7 +28,6 @@ from getpass import getuser
 from collections import OrderedDict
 from datetime import datetime, timedelta
 
-
 ENCODING = sys.getdefaultencoding()
 LINESEP = os.linesep
 
@@ -334,7 +333,7 @@ class UnixDistroInfo(DistroInfo):
         return self._format_usage_output(used, size, 'GB')
 
 
-class WindowsDistroInfo(DistroInfo):
+class WindowsDistroInfo(UnixDistroInfo):
 
     FOREGROUND_BLUE = 0x0001
 
@@ -362,8 +361,14 @@ class WindowsDistroInfo(DistroInfo):
         else:
             self._logo += '\x1b[0m'
 
-        processes = self._process('tasklist').strip().splitlines()[4:]
-        self._process_list = set(x.split(' ')[0].strip().lower() for x in processes)
+        self._process_list = None
+
+    @property
+    def process_list(self):
+        if self._process_list is None:
+            processes = self._process('tasklist').strip().splitlines()[4:]
+            self._process_list = set(x.split(' ')[0].strip().lower() for x in processes)
+        return self._process_list
 
     def _wmic_process(self, command):
         return self._process(command).strip().splitlines()[-1].strip()
@@ -391,17 +396,20 @@ class WindowsDistroInfo(DistroInfo):
 
     @property
     def uptime(self):
+        if self.is_cygwin:
+            return super(WindowsDistroInfo, self).uptime
+
         value = self._process('net stats workstation').strip()
         value = list(x.strip() for x in value.splitlines() if x.strip())[1]
         value = re.match(r'.+(\d\d\..+)', value).groups()[0]
         value = datetime.strptime(value, '%d. %m. %Y %H:%M:%S')
         diff = (datetime.now() - value).seconds
-        return str(timedelta(seconds=diff))
+        return str(timedelta(seconds=diff))[:-3]
 
     @property
     def window_manager(self):
         for window_manager in ['dwm.exe']:
-            if window_manager in self._process_list:
+            if window_manager in self.process_list:
                 break
         else:
             window_manager = 'explorer.exe'
@@ -419,13 +427,13 @@ class WindowsDistroInfo(DistroInfo):
     @property
     def shell(self):
         if self.is_cygwin:
-            shell = 'bash.exe'
+            return super(WindowsDistroInfo, self).shell
+
+        for shell in ['powershell.exe', 'cmd.exe']:
+            if shell in self._process_list:
+                break
         else:
-            for shell in ['powershell.exe', 'cmd.exe']:
-                if shell in self._process_list:
-                    break
-            else:
-                shell = ''
+            shell = ''
 
         return self.__shells__.get(shell, '')
 
@@ -435,7 +443,7 @@ class WindowsDistroInfo(DistroInfo):
             return 'Cygwin Terminal'
         else:
             for shell in ['powershell.exe', 'cmd.exe']:
-                if shell in self._process_list:
+                if shell in self.process_list:
                     break
             else:
                 shell = ''
@@ -457,6 +465,9 @@ class WindowsDistroInfo(DistroInfo):
 
     @property
     def cpu(self):
+        if self.is_cygwin:
+            return super(WindowsDistroInfo, self).cpu
+
         return self._wmic_process('wmic cpu get name')
 
     @property
@@ -471,6 +482,9 @@ class WindowsDistroInfo(DistroInfo):
 
     @property
     def disk(self):
+        if self.is_cygwin:
+            return super(WindowsDistroInfo, self).disk
+
         disk_spaces = self._process('wmic logicaldisk get freespace, size').strip().splitlines()[1:]
         disk_spaces = [line.strip() for line in disk_spaces if line.strip()]
         disk_rgx = re.compile(r'(\d+)\s+(\d+)')
