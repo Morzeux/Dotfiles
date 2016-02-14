@@ -18,3 +18,6 @@ alias dconf-loads='dconf load / < $DOTFILES_PATH/Configs/dconf_backup.dconf'
 alias archey='~/Scripts/uni-archey'
 alias matrix='cmatrix'
 alias joke='echo -e "\e[00;33m$(command cowthink $(fortune))\e[00m"'
+
+alias dotfiles-pull='pushd $DOTFILES_PATH && git pull && popd'
+
