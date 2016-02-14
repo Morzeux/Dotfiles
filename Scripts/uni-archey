@@ -48,7 +48,6 @@ class DistroInfo(object):
         'Clear': ['\x1b[0m']
     }
 
-
     __desktop_env_map__ = {
         'cinnamon-sessio': 'Cinnamon',
         'gnome-session': 'GNOME',
@@ -584,6 +583,31 @@ DISTROS = {
 {color[1]}                    \`\`\`\`\` {color[2]}+oo+++o\:    {results[16]}
 {color[2]}                           \`oo++.          {results[17]}
 \x1b[0m"""
+    ),
+    'kali': UnixDistroInfo(
+        fullname='Kali Linux',
+        package_list_cmd='dpkg -l',
+        colors=['\x1b[1;34m', '\x1b[1;30m'],
+        logo="""{color[0]}
+        {color[0]}            ..,;:ccc,.                            {results[0]}
+{color[0]}          ......''';lxO.                         {results[1]}
+{color[0]}.....''''..........,:ld;                         {results[2]}
+{color[0]}           .';;;:::;,,.x,                        {results[3]}
+{color[0]}      ..'''.            0Xxoc:,.  ...            {results[4]}
+{color[0]}  ....                ,ONkc;,;cokOdc',.          {results[5]}
+{color[0]} .                   OMo           ':{color[1]}dd{color[0]}o.        {results[6]}
+{color[0]}                    dMc               :OO;       {results[7]}
+{color[0]}                    0M.                 .:o.     {results[8]}
+{color[0]}                    ;Wd                          {results[9]}
+{color[0]}                     ;XO,                        {results[10]}
+{color[0]}                       ,d0Odlc;,..               {results[11]}
+{color[0]}                           ..',;:cdOOd::,.       {results[12]}
+{color[0]}                                    .:d;.':;.    {results[13]}
+{color[0]}                                       'd,  .'   {results[14]}
+{color[0]}                                         ;l   .. {results[15]}
+{color[0]}                                          .o     {results[16]}
+{color[0]}                                            c    {results[17]}
+\x1b[0m""".strip()
     ),
     'other': UnixDistroInfo(
         fullname='Unknown Linux',
