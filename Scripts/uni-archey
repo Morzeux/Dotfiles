@@ -400,8 +400,8 @@ class WindowsDistroInfo(UnixDistroInfo):
 
         value = self._process('net stats workstation').strip()
         value = list(x.strip() for x in value.splitlines() if x.strip())[1]
-        value = re.match(r'.+(\d\d\..+)', value).groups()[0]
-        value = datetime.strptime(value, '%d. %m. %Y %H:%M:%S')
+        value = re.match(r'.+?(\d\d\..+)', value).groups()[0]
+        value = datetime.strptime(value.replace(' ', ''), '%d.%m.%Y%H:%M:%S')
         diff = (datetime.now() - value).seconds
         return str(timedelta(seconds=diff))[:-3]
 
