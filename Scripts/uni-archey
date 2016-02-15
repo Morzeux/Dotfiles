@@ -420,7 +420,8 @@ class WindowsDistroInfo(UnixDistroInfo):
         number = int(re.match(r'(\d+)\..+', self._wmic_process('wmic os get version')).groups()[0])
         return {
             5: 'Luna',
-            6: 'Aero'
+            6: 'Aero',
+            10: 'Aero'
         }.get(number, '')
 
     @property
