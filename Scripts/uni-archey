@@ -35,6 +35,7 @@ LINESEP = os.linesep
 if sys.version_info >= (3, 0):
     unicode = str
 
+
 class DistroInfo(object):
 
     __color_dict__ = {
@@ -122,7 +123,10 @@ class DistroInfo(object):
     def _format_usage_output(self, used, total, unit):
         used = int(used)
         total = int(total)
-        used_percent = (float(used) / float(total)) * 100
+        if total == 0:
+            used_percent = 100
+        else:
+            used_percent = (float(used) / float(total)) * 100
 
         if used_percent <= 33:
             usage = '%s%s%s %s/ %s%s' % (self.__color_dict__['Sensors'][1], used, unit, self.__color_dict__['Clear'][0], total, unit)
@@ -140,7 +144,7 @@ class DistroInfo(object):
         return len(self.logo.strip().split('\n')) - 2
 
     @staticmethod
-    def _process(command):
+    def process(command):
         return Popen(command, stdout=PIPE, stderr=PIPE, shell=True).communicate()[0].decode(ENCODING, 'ignore')
 
     @property
@@ -236,7 +240,7 @@ class UnixDistroInfo(DistroInfo):
 
     @property
     def kernel(self):
-        return self._process('uname -r').rstrip(LINESEP)
+        return self.process('uname -r').rstrip(LINESEP)
 
     @property
     def uptime(self):
@@ -287,7 +291,7 @@ class UnixDistroInfo(DistroInfo):
     @property
     def packages(self):
         if self._package_list_cmd is not None:
-            p1 = self._process(self._package_list_cmd)
+            p1 = self.process(self._package_list_cmd)
             packages = len(p1.rstrip(LINESEP).split(LINESEP))
         else:
             packages = 'Unknown'
@@ -302,7 +306,7 @@ class UnixDistroInfo(DistroInfo):
 
     @property
     def ram(self):
-        raminfo = self._process('free -m').split(LINESEP)
+        raminfo = self.process('free -m').split(LINESEP)
         ram = ''.join(filter(re.compile('M').search, raminfo)).split()
         used = ram[2]
         total = ram[1]
@@ -310,8 +314,16 @@ class UnixDistroInfo(DistroInfo):
         return self._format_usage_output(used, total, 'MB')
 
     @property
+    def shell(self):
+        return os.getenv('SHELL')
+
+    @property
+    def terminal(self):
+        return os.getenv('TERM')
+
+    @property
     def disk(self):
-        process_result = self._process("""
+        process_result = self.process("""
             df -Tlh -B GB --total
             -t ext4
             -t ext3
@@ -328,6 +340,34 @@ class UnixDistroInfo(DistroInfo):
         total = process_result.splitlines()[-1].split()
         used = re.match(r'(\d+).*', total[3]).groups()[0]
         size = re.match(r'(\d+).*', total[2]).groups()[0]
+
+        return self._format_usage_output(used, size, 'GB')
+
+
+class AndroidDistroInfo(UnixDistroInfo):
+
+    @property
+    def process_list(self):
+        return set()
+
+    @property
+    def shell(self):
+        return 'bash'
+
+    @property
+    def terminal(self):
+        return 'Termux'
+
+    @property
+    def disk(self):
+        process_result = self.process('df /storage/MicroSD /data')
+
+        used = 0
+        size = 0
+        for row in process_result.splitlines()[1:]:
+            total = row.split()
+            used += re.match(r'(\d+).*', total[3]).groups()[0]
+            size += re.match(r'(\d+).*', total[2]).groups()[0]
 
         return self._format_usage_output(used, size, 'GB')
 
@@ -365,12 +405,12 @@ class WindowsDistroInfo(UnixDistroInfo):
     @property
     def process_list(self):
         if self._process_list is None:
-            processes = self._process('tasklist').strip().splitlines()[4:]
+            processes = self.process('tasklist').strip().splitlines()[4:]
             self._process_list = set(x.split(' ')[0].strip().lower() for x in processes)
         return self._process_list
 
     def _wmic_process(self, command):
-        return self._process(command).strip().splitlines()[-1].strip()
+        return self.process(command).strip().splitlines()[-1].strip()
 
     @property
     def logo(self):
@@ -387,7 +427,7 @@ class WindowsDistroInfo(UnixDistroInfo):
     @property
     def kernel(self):
         if self.is_cygwin:
-            kernel = self._process('uname -sr')
+            kernel = self.process('uname -sr')
         else:
             kernel = '%s %s' % (os.getenv('OS'), self._wmic_process('wmic os get version'))
 
@@ -398,7 +438,7 @@ class WindowsDistroInfo(UnixDistroInfo):
         if self.is_cygwin:
             return super(WindowsDistroInfo, self).uptime
 
-        value = self._process('net stats workstation').strip()
+        value = self.process('net stats workstation').strip()
         value = list(x.strip() for x in value.splitlines() if x.strip())[1]
         value = re.match(r'.+?(\d\d\..+)', value).groups()[0]
         value = datetime.strptime(value.replace(' ', ''), '%d.%m.%Y%H:%M:%S')
@@ -455,7 +495,7 @@ class WindowsDistroInfo(UnixDistroInfo):
         counter = 0
         ppgs1_rgx = re.compile(r'\d+ packages installed.')
         ppgs2_rgx = re.compile(r'\d+ applications not managed with Chocolatey.')
-        for line in self._process(self._package_list_cmd).splitlines():
+        for line in self.process(self._package_list_cmd).splitlines():
             line = line.strip()
             if not line or ppgs1_rgx.match(line) or ppgs2_rgx.match(line):
                 continue
@@ -485,7 +525,7 @@ class WindowsDistroInfo(UnixDistroInfo):
         if self.is_cygwin:
             return super(WindowsDistroInfo, self).disk
 
-        disk_spaces = self._process('wmic logicaldisk get freespace, size').strip().splitlines()[1:]
+        disk_spaces = self.process('wmic logicaldisk get freespace, size').strip().splitlines()[1:]
         disk_spaces = [line.strip() for line in disk_spaces if line.strip()]
         disk_rgx = re.compile(r'(\d+)\s+(\d+)')
         disk_spaces = [disk_rgx.match(line).groups() for line in disk_spaces]
@@ -624,6 +664,26 @@ DISTROS = {
 {color[0]}                                            c    {results[17]}
 \x1b[0m""".strip()
     ),
+    'android': AndroidDistroInfo(
+        fullname='Android',
+        package_list_cmd='apt list --installed',
+        colors=['\x1b[0;0m', '\x1b[1;32m'],
+        logo="""{color[1]}
+{color[1]}       ╲ ▁▂▂▂▁ ╱         {results[0]}
+{color[1]}       ▄███████▄         {results[1]}
+{color[1]}      ▄██{color[0]} {color[1]}███{color[0]} {color[1]}██▄        {results[2]}
+{color[1]}     ▄███████████▄       {results[3]}
+{color[1]}  ▄█ ▄▄▄▄▄▄▄▄▄▄▄▄▄ █▄    {results[4]}
+{color[1]}  ██ █████████████ ██    {results[5]}
+{color[1]}  ██ █████████████ ██    {results[6]}
+{color[1]}  ██ █████████████ ██    {results[7]}
+{color[1]}  ██ █████████████ ██    {results[8]}
+{color[1]}     █████████████       {results[9]}
+{color[1]}      ███████████        {results[10]}
+{color[1]}       ██     ██         {results[11]}
+{color[1]}       ██     ██         {results[12]}
+\x1b[0m""".strip()
+    ),
     'other': UnixDistroInfo(
         fullname='Unknown Linux',
         package_list_cmd=None,
@@ -653,7 +713,10 @@ def distro_detect():
     if kernel_type.startswith('linux'):
         distro = getattr(platform, 'linux_distribution')()[0].split(' ')[0].lower()
         if distro not in DISTROS:
-            distro = 'other'
+            if 'android' in DistroInfo.process('uname -o').lower():
+                distro = 'android'
+            else:
+                distro = 'other'
 
     elif kernel_type.startswith('darwin'):
         distro = 'osx'
