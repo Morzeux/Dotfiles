@@ -366,8 +366,8 @@ class AndroidDistroInfo(UnixDistroInfo):
         size = 0
         for row in process_result.splitlines()[1:]:
             total = row.split()
-            used += re.match(r'(\d+).*', total[3]).groups()[0]
-            size += re.match(r'(\d+).*', total[2]).groups()[0]
+            used += int(re.match(r'(\d+).*', total[2]).groups()[0])
+            size += int(re.match(r'(\d+).*', total[1]).groups()[0])
 
         return self._format_usage_output(used, size, 'GB')
 
