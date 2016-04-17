@@ -9,4 +9,6 @@ echo "Turning off MariaDB..."
 systemctl stop mysqld.service
 echo "Turning off httpd..."
 systemctl stop httpd.service
+echo "Turning off Kibana...
+systemctl stop kibana.service"
 

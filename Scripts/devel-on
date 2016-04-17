@@ -8,5 +8,7 @@ systemctl start redis.service
 echo "Turning on MariaDB..."
 systemctl start mysqld.service
 echo "Turning on httpd..."
-systemctl  start httpd.service
+systemctl start httpd.service
+echo "Turning on Kibana..."
+systemctl start kibana.service
 
