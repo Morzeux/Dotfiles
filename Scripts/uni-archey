@@ -302,7 +302,7 @@ class UnixDistroInfo(DistroInfo):
     def cpu(self):
         with open('/proc/cpuinfo') as fr:
             file = fr.readlines()
-        return re.sub('  +', ' ', file[4].replace('model name\t: ', '').rstrip(LINESEP))
+        return re.sub('  +', ' ', file[4].replace('model name', '').strip().lstrip(':').strip())
 
     @property
     def ram(self):
