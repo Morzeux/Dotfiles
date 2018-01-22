@@ -9,7 +9,7 @@
 # [[ "$PS1" ]] && echo -e "\e[00;33m$(command cowthink $(fortune))\e[00m"
 
 # PS1='[\u@\h \W]\$ '
-PS1='\[\e[0;32m\]\u@\h\[\e[m\] \[\e[1;34m\]\w\[\e[m\] \[\e[1;32m\]\$\[\e[m\] \[\e[1;37m\]'
+PS1='\[\e[1;32m\]\u@\h\[\e[m\] \[\e[1;34m\]\w\[\e[m\] \[\e[1;32m\]\$\[\e[m\] \[\e[1;37m\]'
 
 export PATH="$PATH:$HOME/.rvm/bin:$HOME/Scripts"
 export VISUAL="vim"

@@ -693,6 +693,30 @@ DISTROS = {
 {color[2]}                           \`oo++.          {results[17]}
 \x1b[0m"""
     ),
+    'linuxmint': UnixDistroInfo(
+        fullname='Mint Linux',
+        package_list_cmd='dpkg -l',
+        colors=['\x1b[1;37m', '\x1b[1;32m'],
+        logo="""{color[1]}
+{color[1]} MMMMMMMMMMMMMMMMMMMMMMMMMmds+.       {results[0]}
+{color[1]} MMm----::-://////////////oymNMd+\`    {results[1]}
+{color[1]} MMd      {color[0]}/++                {color[1]}-sNMd:      {results[2]}
+{color[1]} MMNso/\`  {color[0]}dMM    \`.::-. .-::.\` {color[1]}.hMN:     {results[3]}
+{color[1]} ddddMMh  {color[0]}dMM   :hNMNMNhNMNMNh: {color[1]}\`NMm       {results[4]}
+{color[1]}     NMm  {color[0]}dMM  .NMN/-+MMM+-/NMN\` {color[1]}dMM       {results[5]}
+{color[1]}     NMm  {color[0]}dMM  -MMm  \`MMM   dMM. {color[1]}dMM       {results[6]}
+{color[1]}     NMm  {color[0]}dMM  -MMm  \`MMM   dMM. {color[1]}dMM       {results[7]}
+{color[1]}     NMm  {color[0]}dMM  .mmd  \`mmm   yMM. {color[1]}dMM       {results[8]}
+{color[1]}     NMm  {color[0]}dMM\`  ..\`   ...   ydm. {color[1]}dMM      {results[9]}
+{color[1]}     hMM- {color[0]}+MMd/-------...-:sdds  {color[1]}dMM        {results[10]}
+{color[1]}     -NMm- {color[0]}:hNMNNNmdddddddddy/\`  {color[1]}dMM       {results[11]}
+{color[1]}      -dMNs-{color[0]}\`\`-::::-------.\`\`    {color[1]}dMM    {results[12]}
+{color[1]}       \`/dMNmy+/:-------------:/yMMM       {results[13]}
+{color[1]}          ./ydNMMMMMMMMMMMMMMMMMMMMM        {results[14]}
+{color[1]}             \.MMMMMMMMMMMMMMMMMMM          {results[15]}
+{color[1]}                                            {results[16]}
+\x1b[0m"""
+    ),
     'kali': UnixDistroInfo(
         fullname='Kali Linux',
         package_list_cmd='dpkg -l',
